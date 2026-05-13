@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RD VNIIZhT 27.05.01-2017 - O‘quv platforma</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">RD</div>
+        <div>
+          <h1>Wheelset Academy</h1>
+          <p>РД ВНИИЖТ 27.05.01-2017</p>
+        </div>
+      </div>
+      <div class="lang-card">
+        <label id="langLabel">Til / Язык</label>
+        <select id="languageSelect">
+          <option value="uz">O‘zbek lotin</option>
+          <option value="uzc">Ўзбек кирилл</option>
+          <option value="ru">Русский</option>
+        </select>
+      </div>
+      <div class="search-wrap">
+        <input id="sectionSearch" placeholder="Bo‘lim qidirish..." />
+      </div>
+      <nav id="sectionList" class="section-list"></nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="menuBtn" class="ghost">☰</button>
+        <div>
+          <p class="eyebrow" id="sourceLabel">O‘quv modul</p>
+          <h2 id="currentTitle">G‘ildirak juftligi</h2>
+        </div>
+        <div class="top-actions">
+          <button id="resetProgress" class="ghost">Progressni tozalash</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow" id="heroEyebrow">Professional o‘quv dastur</p>
+          <h3 id="heroTitle">Har bo‘lim hajmiga qarab savollar avtomatik guruhlanadi</h3>
+          <p id="heroText">Savollar bir xil sonda emas: kichik bo‘limlar qisqaroq, katta bo‘limlar esa ko‘proq bloklarga bo‘lingan.</p>
+        </div>
+        <div class="stats" id="stats"></div>
+      </section>
+
+      <section class="module-grid">
+        <article class="card lesson-card" id="lessonCard"></article>
+        <article class="card quiz-card" id="quizCard"></article>
+      </section>
+    </main>
+  </div>
+  <script src="data/training-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
