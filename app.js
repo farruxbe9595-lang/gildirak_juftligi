@@ -48,11 +48,93 @@ function renderSectionList(){
   }).join('');
   document.querySelectorAll('[data-section]').forEach(btn=>btn.addEventListener('click',()=>{state.sectionId=Number(btn.dataset.section);state.group=1;state.quiz=null;localStorage.setItem('rd_section_v2',state.sectionId);localStorage.setItem('rd_group_v2',1);renderAll();$('sidebar').classList.remove('open');}));
 }
+function esc(v){
+  return String(v ?? '').replace(/[&<>"]/g, m => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;'
+  }[m]));
+}
+
+function lectureText(s){
+  let text = '';
+
+  if(state.lang === 'ru'){
+    text = s.ru_lecture || s.ru_intro || '';
+  } else {
+    text = s.uz_lecture || s.uz_intro || '';
+  }
+
+  return state.lang === 'uzc' ? latinToCyrillic(text) : text;
+}
+
+function renderLectureParagraphs(text){
+  return text
+    .split(/\n\s*\n/)
+    .filter(Boolean)
+    .map(p => {
+      const clean = esc(p.trim());
+
+      if(clean.startsWith('### ')){
+        return `<h4>${clean.replace('### ', '')}</h4>`;
+      }
+
+      if(clean.startsWith('- ')){
+        const items = clean
+          .split('\n')
+          .map(x => x.replace('- ', '').trim())
+          .filter(Boolean)
+          .map(x => `<li>${x}</li>`)
+          .join('');
+        return `<ul>${items}</ul>`;
+      }
+
+      return `<p>${clean}</p>`;
+    })
+    .join('');
+}
+
 function renderLesson(){
-  const s = DATA.sections.find(x=>x.id===state.sectionId)||DATA.sections[0];
-  $('currentTitle').textContent=`${s.id}. ${sectionTitle(s)}`;
-  const topics=s.subtopics.map(x=>`<div class="topic"><h4>${subName(x)}</h4><dl><dt>${t('main')}</dt><dd>${subMain(x)}</dd><dt>${t('risk')}</dt><dd>${subRisk(x)}</dd><dt>${t('action')}</dt><dd>${subAction(x)}</dd><dt>${t('terms')}</dt><dd>${x.terms}</dd></dl></div>`).join('');
-  $('lessonCard').innerHTML=`<div class="card-head"><p class="eyebrow">${t('lesson')}</p><h3>${s.id}. ${sectionTitle(s)}</h3><div class="pill-row"><span class="pill">${t('sourcePages')}: ${s.pages}</span><span class="pill">${s.target} ${t('questions')}</span><span class="pill">${groupsFor(s)} ${t('groups')}</span></div></div><div class="card-body"><div class="block"><h4>${t('expected')}</h4><p>${sectionIntro(s)}</p></div><div class="block"><h4>${t('coverage')}</h4><div class="coverage">${s.subtopics.map(x=>`<div><b>${subName(x)}</b><span>${x.terms}</span></div>`).join('')}</div></div><div class="topic-grid">${topics}</div><p class="note">${t('standardNote')}</p></div>`;
+  const s = DATA.sections.find(x => x.id === state.sectionId) || DATA.sections[0];
+
+  $('currentTitle').textContent = `${s.id}. ${sectionTitle(s)}`;
+
+  const terms = Array.from(
+    new Set(
+      s.subtopics
+        .flatMap(x => String(x.terms || '').split(','))
+        .map(x => x.trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 18);
+
+  $('lessonCard').innerHTML = `
+    <div class="card-head">
+      <p class="eyebrow">${t('lesson')}</p>
+      <h3>${s.id}. ${sectionTitle(s)}</h3>
+      <div class="pill-row">
+        <span class="pill">${t('sourcePages')}: ${s.pages}</span>
+        <span class="pill">${s.target} ${t('questions')}</span>
+        <span class="pill">${groupsFor(s)} ${t('groups')}</span>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="lecture-box">
+        ${renderLectureParagraphs(lectureText(s))}
+      </div>
+
+      <div class="remember-box">
+        <h4>${state.lang === 'ru' ? 'Основные термины' : L('Asosiy terminlar')}</h4>
+        <div class="term-list">
+          ${terms.map(x => `<span>${esc(state.lang === 'uzc' ? latinToCyrillic(x) : x)}</span>`).join('')}
+        </div>
+      </div>
+
+      <p class="note">${t('standardNote')}</p>
+    </div>
+  `;
 }
 function shuffle(a){const arr=a.slice();for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr;}
 function wrongPool(section, kind){
