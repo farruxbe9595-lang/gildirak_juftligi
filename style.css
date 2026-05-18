@@ -358,6 +358,147 @@ ol {
   border: 1px solid #efb1b1;
 }
 
+/* TUNGI REJIM */
+html[data-theme="dark"] body {
+  background: #0b1220;
+  color: #e6edf7;
+}
+
+html[data-theme="dark"] .topbar {
+  background: linear-gradient(135deg, #07162b, #123b66);
+}
+
+html[data-theme="dark"] .topbar p {
+  color: #c7d8ee;
+}
+
+html[data-theme="dark"] .hero,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .lesson-card,
+html[data-theme="dark"] table {
+  background: #111c2f;
+  color: #e6edf7;
+  border-color: #243650;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .28);
+}
+
+html[data-theme="dark"] .stats {
+  background: #13243b;
+  border-color: #284461;
+}
+
+html[data-theme="dark"] .stats strong {
+  color: #71b7ff;
+}
+
+html[data-theme="dark"] .stats span,
+html[data-theme="dark"] .source,
+html[data-theme="dark"] .score {
+  color: #aabbd0;
+}
+
+html[data-theme="dark"] .badge {
+  background: #2d78bd;
+}
+
+html[data-theme="dark"] .progress {
+  background: #263850;
+}
+
+html[data-theme="dark"] .progress span {
+  background: #2dcc89;
+}
+
+html[data-theme="dark"] .btn {
+  background: #2d78bd;
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .btn.secondary {
+  background: #1a2d46;
+  color: #9fd0ff;
+}
+
+html[data-theme="dark"] .block h2,
+html[data-theme="dark"] .lesson-head h1 {
+  color: #9fd0ff;
+}
+
+html[data-theme="dark"] .lesson-head,
+html[data-theme="dark"] .bottom {
+  border-color: #263850;
+}
+
+html[data-theme="dark"] .table-scroll {
+  border-color: #2c405c;
+}
+
+html[data-theme="dark"] th {
+  background: #172a44;
+  color: #b9ddff;
+}
+
+html[data-theme="dark"] td,
+html[data-theme="dark"] th {
+  border-bottom-color: #263850;
+}
+
+html[data-theme="dark"] .question {
+  background: #111c2f;
+  border-color: #2c405c;
+}
+
+html[data-theme="dark"] .question label {
+  background: #18263a;
+  color: #e6edf7;
+}
+
+html[data-theme="dark"] .question.ok {
+  background: #0e2a20;
+  border-color: #2dcc89;
+}
+
+html[data-theme="dark"] .question.bad {
+  background: #2a1518;
+  border-color: #e05a5a;
+}
+
+html[data-theme="dark"] .explain {
+  color: #c7d8ee;
+}
+
+html[data-theme="dark"] .result.ok {
+  background: #0e2a20;
+  border-color: #2dcc89;
+}
+
+html[data-theme="dark"] .result.bad {
+  background: #2a1518;
+  border-color: #e05a5a;
+}
+
+html[data-theme="dark"] select {
+  background: #111c2f;
+  color: #e6edf7;
+  border-color: #2c405c;
+}
+
+html[data-theme="dark"] .ghost {
+  background: rgba(255, 255, 255, .12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, .32);
+}
+
+html[data-theme="dark"] .test-badge {
+  background: rgba(255, 255, 255, .14);
+  border-color: rgba(255, 255, 255, .32);
+}
+
+html[data-theme="dark"] .admin-contact {
+  background: rgba(255, 255, 255, .10);
+}
+
+/* TELEFON MOSLASHUVI */
 @media (max-width: 720px) {
   .topbar,
   .hero {
