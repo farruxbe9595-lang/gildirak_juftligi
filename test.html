@@ -3,18 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Test</title>
+  <title>Test - G‘ildirak juftligi</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topbar compact">
-    <a href="index.html" class="back">← Bo‘limlar</a>
-    <div class="toolbar"><select id="langSelect"><option value="uz">O‘zbek lotin</option><option value="uzc">Ўзбек кирилл</option><option value="ru">Русский</option></select></div>
+    <div>
+      <a href="index.html" class="back">← Bosh sahifa</a>
+      <p>RD VNIIZHT 27.05.01-2017 asosida tayyorlangan test oynasi</p>
+
+      <div class="test-badge">Sinov tarzda ishga tushirildi</div>
+
+      <div class="admin-contact">
+        Murojaat uchun: Admin — VChD-5 IChTB boshlig‘i G‘aniyev F.B.
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <select id="langSelect">
+        <option value="uz">O‘zbek lotin</option>
+        <option value="uzc">O‘zbek kirill</option>
+        <option value="ru">Русский</option>
+      </select>
+
+      <button id="themeToggle" class="ghost" type="button">🌙 Tungi rejim</button>
+    </div>
   </header>
+
   <main class="lesson-wrap">
-    <section id="testContent" class="lesson-card"></section>
+    <form id="quizForm" class="lesson-card">
+      <div id="testContent"></div>
+      <button type="submit" class="btn submit">Natijani tekshirish</button>
+      <div id="result"></div>
+    </form>
   </main>
+
   <script src="data/training-data.js"></script>
   <script src="test.js"></script>
+  <script src="theme.js"></script>
 </body>
 </html>
