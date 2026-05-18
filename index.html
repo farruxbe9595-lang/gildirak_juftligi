@@ -20,13 +20,15 @@
     </div>
 
     <div class="toolbar">
-      <select id="langSelect">
+      <select id="langSelect" aria-label="Til tanlash">
         <option value="uz">O‘zbek lotin</option>
-        <option value="uzc">O‘zbek kirill</option>
+        <option value="uzc">Ўзбек кирилл</option>
         <option value="ru">Русский</option>
       </select>
 
       <button id="themeToggle" class="ghost" type="button">🌙 Tungi rejim</button>
+
+      <button id="resetProgress" class="ghost" type="button">Progressni tozalash</button>
     </div>
   </header>
 
@@ -36,17 +38,14 @@
         <h2>O‘qish tartibi</h2>
         <p>
           Har bir bo‘limda dars matni, jadvallar, amaliy nazorat kartasi va 15 ta test savoli bor.
-          Testdan o‘tish uchun kamida 85% natija tavsiya etiladi.
+          Testdan o‘tish uchun kamida 75% natija tavsiya etiladi.
         </p>
       </div>
 
-      <div class="stats">
-        <strong>30</strong>
-        <span>bo‘lim</span>
-      </div>
+      <div class="stats" id="stats"></div>
     </section>
 
-    <section id="cards" class="grid"></section>
+    <section id="sectionGrid" class="grid"></section>
   </main>
 
   <script src="data/training-data.js"></script>
