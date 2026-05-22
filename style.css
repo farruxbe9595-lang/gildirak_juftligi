@@ -525,4 +525,88 @@ html[data-theme="dark"] .admin-contact {
   .admin-contact {
     font-size: 13px;
   }
+
+  .contact-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .contact-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .contact-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    font-weight: 700;
+  }
+  
+  .contact-link:hover {
+    background: rgba(255, 255, 255, 0.26);
+  }
+  
+  .qr-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+  
+  .telegram-qr {
+    width: 58px;
+    height: 58px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+  }
+  
+  html[data-theme="dark"] .contact-box {
+    background: rgba(255, 255, 255, .10);
+  }
+  
+  html[data-theme="dark"] .contact-link {
+    background: rgba(255, 255, 255, .12);
+    border-color: rgba(255, 255, 255, .25);
+  }
+  
+  @media (max-width: 720px) {
+    .contact-box {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  
+    .telegram-qr {
+      width: 72px;
+      height: 72px;
+    }
+  
+    .contact-links {
+      flex-direction: column;
+    }
+  }
 }
