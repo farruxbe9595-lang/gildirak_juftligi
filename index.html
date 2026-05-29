@@ -1,49 +1,58 @@
 <!DOCTYPE html>
 <html lang="uz">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>G‘ildirak juftligi - o‘quv platforma</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="category-tests.css" />
 </head>
+
 <body>
   <header class="topbar">
     <div>
       <h1>G‘ildirak juftligi va buksa uzellari</h1>
       <p>РД ВНИИЖТ 27.05.01-2017 asosida 30 bo‘limli professional o‘quv-test platformasi</p>
-  
       <div class="test-badge">Sinov tarzda ishga tushirildi</div>
-  
       <div class="contact-box">
         <div class="contact-text">
           <div>Murojaat uchun: Admin — VChD-5 IChTB boshlig‘i G‘aniyev F.B.</div>
-  
           <div class="contact-links">
             <a href="tel:+998941085696" class="contact-link">📞 +998 94 108 56 96</a>
-            <a href="https://t.me/FARRUX3336" target="_blank" rel="noopener" class="contact-link">
-              💬 Telegram: @FARRUX3336
-            </a>
+            <a href="https://t.me/FARRUX3336" target="_blank" rel="noopener" class="contact-link">💬 Telegram: @FARRUX3336</a>
           </div>
         </div>
-  
         <a href="https://t.me/FARRUX3336" target="_blank" rel="noopener" class="qr-link" title="Telegramga o‘tish">
           <img src="assets/telegram_qr.png" alt="Telegram QR: @FARRUX3336" class="telegram-qr">
         </a>
       </div>
     </div>
-  
     <div class="toolbar">
       <select id="langSelect" aria-label="Til tanlash">
         <option value="uz">O‘zbek lotin</option>
         <option value="uzc">Ўзбек кирилл</option>
         <option value="ru">Русский</option>
       </select>
-  
       <button id="themeToggle" class="ghost" type="button">🌙 Tungi rejim</button>
       <button id="resetProgress" class="ghost" type="button">Progressni tozalash</button>
     </div>
   </header>
+
   <main class="container">
+    <section class="exam-entry" aria-label="Alohida testlar bo‘limi">
+      <div>
+        <span class="mini-label">Alohida test bo‘limi</span>
+        <h2>Testlar bo‘limi</h2>
+        <p>
+          Bu bo‘lim darslar progressiga tegmaydi. Xodim o‘z kategoriyasini tanlaydi,
+          test boshlanishidan oldin 20 ta, 30 ta yoki barcha savollarni belgilaydi.
+          Javob tanlanmaguncha keyingi savolga o‘tib bo‘lmaydi.
+        </p>
+      </div>
+      <a class="btn exam-open-btn" href="category-tests.html">Testlarni ochish</a>
+    </section>
+
     <section class="hero">
       <div>
         <h2>O‘qish tartibi</h2>
@@ -52,7 +61,6 @@
           Testdan o‘tish uchun kamida 75% natija tavsiya etiladi.
         </p>
       </div>
-
       <div class="stats" id="stats"></div>
     </section>
 
@@ -63,4 +71,5 @@
   <script src="app.js"></script>
   <script src="theme.js"></script>
 </body>
+
 </html>
