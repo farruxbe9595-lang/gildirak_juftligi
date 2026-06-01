@@ -72,9 +72,7 @@ function renderStart() {
           </p>
         </div>
       </div>
-
       <div class="category-grid">${categoriesHtml}</div>
-
       <div class="count-box">
         <h3>Savollar sonini tanlang</h3>
         <div class="count-options">
@@ -83,7 +81,6 @@ function renderStart() {
           <label><input type="radio" name="count" value="all" ${selectedCount === "all" ? "checked" : ""}> Barcha savollar</label>
         </div>
       </div>
-
       <div class="actions cat-actions">
         <button class="btn" type="button" id="startCategoryTest">Testni boshlash</button>
         <a class="btn secondary" href="index.html">Bosh sahifaga qaytish</a>
@@ -128,6 +125,7 @@ function startTest() {
       number: q.number,
       originalNumber: q.originalNumber,
       question: q.q,
+      explanation: q.explanation || "",
       options,
     };
   });
@@ -159,10 +157,15 @@ function renderQuestion() {
   }).join("");
 
   const correctOption = q.options.find((option) => option.correct);
+  const explanationHtml = q.explanation
+    ? `<p class="answer-source"><b>Изоҳ:</b> ${escapeHtml(q.explanation.replace(/^Изоҳ:\s*/i, ""))}</p>`
+    : "";
+
   const feedback = answered ? `
     <div class="answer-feedback ${answered.isCorrect ? "good" : "bad"}">
       <strong>${answered.isCorrect ? "To‘g‘ri javob tanlandi." : "Noto‘g‘ri javob tanlandi."}</strong>
       <p>To‘g‘ri javob: <b>${escapeHtml(correctOption?.text || "")}</b></p>
+      ${explanationHtml}
     </div>
   ` : `
     <div class="answer-feedback neutral">
@@ -179,15 +182,12 @@ function renderQuestion() {
         </div>
         <div class="quiz-pill">${getCountLabel(selectedCount, activeCategory.questions.length)}</div>
       </div>
-
       <div class="progress large"><span style="width:${progress}%"></span></div>
-
       <article class="cat-question">
         <h3>${escapeHtml(q.question)}</h3>
         <div class="option-list">${optionsHtml}</div>
         ${feedback}
       </article>
-
       <div class="actions cat-actions">
         <button class="btn secondary" type="button" id="backToCategories">Test sahifasiga qaytish</button>
         <button class="btn" type="button" id="nextQuestion" ${answered ? "" : "disabled"}>
@@ -245,13 +245,11 @@ function finishTest() {
       <h2>${percent}%</h2>
       <p><b>${correct}/${total}</b> ta javob to‘g‘ri belgilandi.</p>
       <p>Kategoriya: <b>${escapeHtml(activeCategory.title)}</b></p>
-
       <div class="result-summary-grid">
         <div><strong>${total}</strong><span>Jami savol</span></div>
         <div><strong>${correct}</strong><span>To‘g‘ri</span></div>
         <div><strong>${total - correct}</strong><span>Noto‘g‘ri</span></div>
       </div>
-
       <div class="actions cat-actions result-actions">
         <a class="btn" href="index.html">Bosh sahifaga qaytish</a>
         <button class="btn secondary" type="button" id="goCategories">Test sahifasiga qaytish</button>
