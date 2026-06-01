@@ -36,6 +36,35 @@ function getCountLabel(value, total) {
   return `${value} ta savol`;
 }
 
+function getQuestionText(q) {
+  return q.q || q.question || q.title || "";
+}
+
+function getQuestionExplanation(q) {
+  return String(q.explanation || q.izoh || q.comment || q.source || q.note || "").trim();
+}
+
+function renderExplanation(explanation) {
+  const clean = String(explanation || "")
+    .replace(/^Изоҳ:\s*/i, "")
+    .replace(/^Izoh:\s*/i, "")
+    .trim();
+
+  if (!clean) {
+    return `
+      <div class="answer-explanation" style="margin-top:12px;padding-top:12px;border-top:1px dashed rgba(2,132,199,.35);line-height:1.55;white-space:pre-line;">
+        <b>Изоҳ / манба:</b> Бу савол учун изоҳ майдони топилмади.
+      </div>
+    `;
+  }
+
+  return `
+    <div class="answer-explanation" style="margin-top:12px;padding-top:12px;border-top:1px dashed rgba(2,132,199,.35);line-height:1.55;white-space:pre-line;">
+      <b>Изоҳ / манба:</b> ${escapeHtml(clean)}
+    </div>
+  `;
+}
+
 function renderStart() {
   activeCategory = null;
   activeQuiz = [];
@@ -44,7 +73,7 @@ function renderStart() {
   resultState = null;
 
   if (!TEST_CATEGORIES.length) {
-    app.innerHTML = `<div class="lesson-card"><h2>Test ma’lumotlari topilmadi</h2><p>data/category-tests-data.js fayli tekshiring.</p></div>`;
+    app.innerHTML = `<div class="lesson-card"><h2>Test ma’lumotlari topilmadi</h2><p>data/category-tests-data.js faylini tekshiring.</p></div>`;
     return;
   }
 
@@ -124,8 +153,8 @@ function startTest() {
     return {
       number: q.number,
       originalNumber: q.originalNumber,
-      question: q.q,
-      explanation: q.explanation || "",
+      question: getQuestionText(q),
+      explanation: getQuestionExplanation(q),
       options,
     };
   });
@@ -157,15 +186,11 @@ function renderQuestion() {
   }).join("");
 
   const correctOption = q.options.find((option) => option.correct);
-  const explanationHtml = q.explanation
-    ? `<p class="answer-source"><b>Изоҳ:</b> ${escapeHtml(q.explanation.replace(/^Изоҳ:\s*/i, ""))}</p>`
-    : "";
-
   const feedback = answered ? `
     <div class="answer-feedback ${answered.isCorrect ? "good" : "bad"}">
       <strong>${answered.isCorrect ? "To‘g‘ri javob tanlandi." : "Noto‘g‘ri javob tanlandi."}</strong>
       <p>To‘g‘ri javob: <b>${escapeHtml(correctOption?.text || "")}</b></p>
-      ${explanationHtml}
+      ${renderExplanation(q.explanation)}
     </div>
   ` : `
     <div class="answer-feedback neutral">
