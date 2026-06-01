@@ -78,6 +78,31 @@ function scrollToStartControls() {
   }, 80);
 }
 
+
+function scrollToQuestionTop() {
+  const target = document.querySelector(".cat-question-card") || document.querySelector(".quiz-topline");
+  if (!target) return;
+  window.setTimeout(() => {
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "nearest",
+    });
+  }, 80);
+}
+
+function scrollToQuestionActions() {
+  const target = document.getElementById("nextQuestion") || document.querySelector(".cat-question-card .cat-actions");
+  if (!target) return;
+  window.setTimeout(() => {
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  }, 120);
+}
+
 function renderStart() {
   activeCategory = null;
   activeQuiz = [];
@@ -176,6 +201,7 @@ function startTest() {
   currentIndex = 0;
   answers = Array(activeQuiz.length).fill(null);
   renderQuestion();
+  scrollToQuestionTop();
 }
 
 function renderQuestion() {
@@ -255,6 +281,7 @@ function selectAnswer(selectedIndex) {
     isCorrect: selected?.correct === true,
   };
   renderQuestion();
+  scrollToQuestionActions();
 }
 
 function nextQuestion() {
@@ -266,6 +293,7 @@ function nextQuestion() {
   if (currentIndex < activeQuiz.length - 1) {
     currentIndex += 1;
     renderQuestion();
+    scrollToQuestionTop();
     return;
   }
 
