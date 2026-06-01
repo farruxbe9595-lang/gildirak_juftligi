@@ -65,6 +65,19 @@ function renderExplanation(explanation) {
   `;
 }
 
+
+function scrollToStartControls() {
+  const target = document.getElementById("startCategoryTest") || document.querySelector(".cat-actions") || document.querySelector(".count-box");
+  if (!target) return;
+  window.setTimeout(() => {
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  }, 80);
+}
+
 function renderStart() {
   activeCategory = null;
   activeQuiz = [];
@@ -122,6 +135,7 @@ function renderStart() {
       selectedCategoryId = event.target.value;
       document.querySelectorAll(".category-card").forEach((card) => card.classList.remove("active"));
       event.target.closest(".category-card")?.classList.add("active");
+      scrollToStartControls();
     });
   });
 
