@@ -8,11 +8,11 @@
   3) supabase/SUPABASE_SCHEMA.sql faylini Supabase SQL Editor’da ishga tushiring
 */
 window.SUPABASE_CONFIG = {
-  enabled: false,
-  url: "",
-  anonKey: "",
+  enabled: true,
+  url: "//rrsmokgexkfablfufxpn.supabase.co",
+  anonKey: "sb_publishable_jsWoViDSg46_lldPaAZ9bA_yLLmUrnx",
   tables: {
     profiles: "ranked_profiles",
     attempts: "ranked_attempts"
   }
-};
+};;
