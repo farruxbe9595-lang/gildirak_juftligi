@@ -1,0 +1,163 @@
+/* Testlar bo‘limidagi reytingli umumiy test kartochkasi */
+.ranked-entry-pro {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  align-items: center;
+  gap: 24px;
+  width: min(880px, 100%);
+  margin: 24px auto 30px 0;
+  padding: 30px;
+  border-radius: 30px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(255,255,255,.40) 0 116px, transparent 117px),
+    linear-gradient(135deg, #073b70 0%, #0f5f9d 48%, #2563eb 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 24px 60px rgba(15, 95, 157, .24);
+}
+.ranked-entry-pro__shine {
+  position: absolute;
+  inset: -80px auto auto -80px;
+  width: 210px;
+  height: 210px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.14);
+  filter: blur(2px);
+}
+.ranked-entry-pro__content,
+.ranked-entry-pro__visual {
+  position: relative;
+  z-index: 1;
+}
+.ranked-entry-pro__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.22);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  backdrop-filter: blur(8px);
+}
+.ranked-entry-pro h2 {
+  margin: 16px 0 12px;
+  max-width: 640px;
+  color: #ffffff;
+  font-size: clamp(30px, 4.5vw, 46px);
+  line-height: 1.06;
+  letter-spacing: -.03em;
+}
+.ranked-entry-pro p {
+  margin: 0;
+  max-width: 680px;
+  color: rgba(255,255,255,.88);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.ranked-entry-pro__features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0 24px;
+}
+.ranked-entry-pro__features span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.20);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+.ranked-entry-pro__features span::before {
+  content: "✓";
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.24);
+}
+.ranked-entry-pro__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 0 24px;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #0f5f9d !important;
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 950;
+  box-shadow: 0 16px 34px rgba(0,0,0,.16);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.ranked-entry-pro__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0,0,0,.20);
+}
+.ranked-entry-pro__btn b {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #edf6ff;
+}
+.ranked-entry-pro__visual {
+  display: grid;
+  place-items: center;
+}
+.ranked-entry-pro__circle {
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.20);
+}
+.ranked-entry-pro__circle span {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,.92);
+  font-size: 28px;
+  box-shadow: 0 12px 26px rgba(0,0,0,.16);
+}
+.ranked-entry-pro__circle span:nth-child(1) { transform: translateY(-18px); }
+.ranked-entry-pro__circle span:nth-child(2) { transform: translateY(18px); }
+.ranked-entry-pro__circle span:nth-child(3) { transform: translateY(-6px); }
+html[data-theme="dark"] .ranked-entry-pro {
+  background: linear-gradient(135deg, #06172b 0%, #0b345c 48%, #123a7d 100%);
+}
+@media (max-width: 900px) {
+  .ranked-entry-pro {
+    grid-template-columns: 1fr;
+    padding: 26px;
+  }
+  .ranked-entry-pro__visual { display: none; }
+}
+@media (max-width: 560px) {
+  .ranked-entry-pro {
+    border-radius: 24px;
+    padding: 22px 18px;
+  }
+  .ranked-entry-pro__btn { width: 100%; }
+  .ranked-entry-pro__features span { width: 100%; }
+}

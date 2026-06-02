@@ -17,6 +17,7 @@
   let currentIndex = 0;
   let startedAt = null;
   let timerId = null;
+  let finishInProgress = false;
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -623,6 +624,7 @@
     });
     answers = Array(quiz.length).fill(null);
     currentIndex = 0;
+    finishInProgress = false;
     startedAt = new Date();
     startTimer();
     renderQuestion();
@@ -647,6 +649,7 @@
   function renderQuestion() {
     const q = quiz[currentIndex];
     const answered = answers[currentIndex];
+    const isWrongAnswer = Boolean(answered && !answered.isCorrect);
     const progress = Math.round((currentIndex / quiz.length) * 100);
     const optionsHtml = q.options.map((option, index) => {
       let cls = "ranked-option";
@@ -658,11 +661,11 @@
     }).join("");
     const correctOption = q.options.find((item) => item.correct);
     const info = answered
-      ? `<div class="answer-info ${answered.isCorrect ? "good" : "bad"}"><b>${answered.isCorrect ? "To‘g‘ri javob tanlandi." : "Noto‘g‘ri javob tanlandi."}</b><br>To‘g‘ri javob: ${escapeHtml(correctOption?.text || "")}${q.explanation ? `<br><br><b>Izoh / manba:</b> ${escapeHtml(q.explanation)}` : ""}</div>`
-      : `<div class="answer-info wait">Javobni belgilang. Javob belgilanmaguncha keyingi savolga o‘tib bo‘lmaydi.</div>`;
+      ? `<div class="answer-info ${answered.isCorrect ? "good" : "bad"}"><b>${answered.isCorrect ? "To‘g‘ri javob tanlandi." : "Noto‘g‘ri javob belgilandi. Test avtomatik yakunlanadi."}</b><br>To‘g‘ri javob: ${escapeHtml(correctOption?.text || "")}${q.explanation ? `<br><br><b>Izoh / manba:</b> ${escapeHtml(q.explanation)}` : ""}</div>`
+      : `<div class="answer-info wait">Javobni belgilang. Reytingli umumiy testda bitta noto‘g‘ri javob tanlansa, test darhol yakunlanadi va natija saqlanadi.</div>`;
 
     app.innerHTML = `
-      <section class="ranked-card">
+      <section class="ranked-card quiz-card">
         <div class="quiz-header">
           <div>
             <span class="mini-label">${escapeHtml(q.categoryTitle)}</span>
@@ -674,9 +677,9 @@
         <div class="quiz-question">${escapeHtml(q.question)}</div>
         <div class="ranked-option-list">${optionsHtml}</div>
         ${info}
-        <div class="ranked-actions">
-          <button id="nextRankedQuestion" class="primary" type="button" ${answered ? "" : "disabled"}>${currentIndex === quiz.length - 1 ? "Tugatish" : "Keyingi savol"}</button>
-          <button id="cancelRankedTest" class="secondary" type="button">Testdan chiqish</button>
+        <div class="ranked-actions quiz-actions">
+          <button id="nextRankedQuestion" class="primary" type="button" ${answered && !isWrongAnswer ? "" : "disabled"}>${isWrongAnswer ? "Natija saqlanmoqda..." : (currentIndex === quiz.length - 1 ? "Testni yakunlash" : "Keyingi savol →")}</button>
+          <button id="cancelRankedTest" class="secondary" type="button" ${isWrongAnswer ? "disabled" : ""}>Testdan chiqish</button>
         </div>
       </section>
     `;
@@ -693,20 +696,29 @@
   }
 
   function selectAnswer(index) {
-    if (answers[currentIndex]) return;
+    if (answers[currentIndex] || finishInProgress) return;
     const q = quiz[currentIndex];
     const selected = q.options[index];
+    const isCorrect = Boolean(selected?.correct);
     answers[currentIndex] = {
       selectedIndex: index,
-      isCorrect: Boolean(selected?.correct)
+      isCorrect
     };
     renderQuestion();
+
+    if (!isCorrect) {
+      finishInProgress = true;
+      window.setTimeout(() => finishQuiz("wrong-answer"), 900);
+      return;
+    }
+
     window.setTimeout(() => {
       document.getElementById("nextRankedQuestion")?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
   }
 
   function nextQuestion() {
+    if (finishInProgress) return;
     if (!answers[currentIndex]) {
       alert("Avval javobni belgilang.");
       return;
@@ -720,7 +732,9 @@
     finishQuiz();
   }
 
-  async function finishQuiz() {
+  async function finishQuiz(reason = "completed") {
+    if (finishInProgress && reason !== "wrong-answer") return;
+    finishInProgress = true;
     stopTimer();
     const finishedAt = new Date();
     const correct = answers.filter((item) => item?.isCorrect).length;
@@ -780,6 +794,7 @@
         <span class="mini-label">Test yakunlandi</span>
         <h2>${percent}%</h2>
         <p>${correct}/${total} ta javob to‘g‘ri. Sarflangan vaqt: <b>${formatTime(durationSeconds)}</b>.</p>
+        ${reason === "wrong-answer" ? `<div class="ranked-warning"><b>Test avtomatik yakunlandi:</b> bitta noto‘g‘ri javob belgilandi va natija saqlandi.</div>` : ""}
         <div class="ranked-note">${saveMessage}</div>
         <div class="stats-grid">
           <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Joriy o‘rin</span></div>
@@ -794,7 +809,7 @@
       </section>
       ${renderLeaderboard()}
     `;
-    document.getElementById("backDashboard")?.addEventListener("click", renderDashboard);
+    document.getElementById("backDashboard")?.addEventListener("click", () => { finishInProgress = false; renderDashboard(); });
     document.getElementById("restartRanked")?.addEventListener("click", startQuiz);
     scrollToAppTop();
   }
