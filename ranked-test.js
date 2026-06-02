@@ -923,6 +923,15 @@
     });
   }
 
+  function scrollToAnswerActions() {
+    window.setTimeout(() => {
+      const target = document.getElementById("nextRankedQuestion") || document.querySelector(".answer-info");
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 120);
+  }
+
   function selectAnswer(index) {
     if (answers[currentIndex] || finishInProgress) return;
     const q = quiz[currentIndex];
@@ -933,10 +942,11 @@
       isCorrect
     };
     renderQuestion();
+    scrollToAnswerActions();
 
     if (!isCorrect) {
       finishInProgress = true;
-      window.setTimeout(() => finishQuiz("wrong-answer"), 900);
+      window.setTimeout(() => finishQuiz("wrong-answer"), 1200);
       return;
     }
 
