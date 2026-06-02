@@ -4,10 +4,11 @@
   const PROFILE_KEY = "gj_ranked_profile_v1";
   const ATTEMPTS_KEY = "gj_ranked_attempts_v1";
   const ACTIVE_SESSION_KEY = "gj_ranked_active_session_v1";
-  const QUIZ_COUNT_KEY = "gj_ranked_count_v1";
+
   const app = document.getElementById("rankedApp");
   const categories = Array.isArray(window.CATEGORY_TESTS) ? window.CATEGORY_TESTS : [];
   const config = window.SUPABASE_CONFIG || { enabled: false };
+
   let supabaseClient = null;
   let profile = null;
   let attempts = [];
@@ -16,7 +17,6 @@
   let currentIndex = 0;
   let startedAt = null;
   let timerId = null;
-  let selectedCount = localStorage.getItem(QUIZ_COUNT_KEY) || "20";
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -61,7 +61,7 @@
   }
 
   function saveLocalAttempts(list) {
-    localStorage.setItem(ATTEMPTS_KEY, JSON.stringify(list));
+    localStorage.setItem(ATTEMPTS_KEY, JSON.stringify(getBestAttempts(list)));
   }
 
   function loadLocalAttempts() {
@@ -118,7 +118,24 @@
       .select("*")
       .single();
     if (error) throw error;
+
+    await dbUpdateAttemptProfileInfo(saved);
     return dbProfileToLocal(saved);
+  }
+
+  async function dbUpdateAttemptProfileInfo(savedProfile) {
+    const db = getSupabase();
+    if (!db || !savedProfile?.phone) return;
+    await db
+      .from(config.tables?.attempts || "ranked_attempts")
+      .update({
+        profile_id: savedProfile.id,
+        full_name: savedProfile.full_name,
+        company: savedProfile.company,
+        department: savedProfile.department,
+        position: savedProfile.position
+      })
+      .eq("phone", normalizePhone(savedProfile.phone));
   }
 
   function dbProfileToLocal(row) {
@@ -136,16 +153,8 @@
     };
   }
 
-  async function dbLoadAttempts() {
-    const db = getSupabase();
-    if (!db) return loadLocalAttempts();
-    const { data, error } = await db
-      .from(config.tables?.attempts || "ranked_attempts")
-      .select("*")
-      .order("finished_at", { ascending: false })
-      .limit(500);
-    if (error) throw error;
-    return (data || []).map((row) => ({
+  function dbAttemptToLocal(row) {
+    return {
       id: row.id,
       profileId: row.profile_id,
       phone: row.phone,
@@ -160,14 +169,12 @@
       startedAt: row.started_at,
       finishedAt: row.finished_at,
       source: row.source || "supabase"
-    }));
+    };
   }
 
-  async function dbSaveAttempt(attempt) {
-    const db = getSupabase();
-    if (!db) return null;
-    const payload = {
-      id: attempt.id,
+  function attemptToDbPayload(attempt, id = attempt.id) {
+    return {
+      id,
       profile_id: attempt.profileId,
       phone: normalizePhone(attempt.phone),
       full_name: attempt.fullName,
@@ -182,9 +189,74 @@
       finished_at: attempt.finishedAt,
       source: "ranked-general-test"
     };
-    const { error } = await db.from(config.tables?.attempts || "ranked_attempts").insert(payload);
+  }
+
+  async function dbLoadAttempts() {
+    const db = getSupabase();
+    if (!db) return getBestAttempts(loadLocalAttempts());
+    const { data, error } = await db
+      .from(config.tables?.attempts || "ranked_attempts")
+      .select("*")
+      .order("percent", { ascending: false })
+      .order("duration_seconds", { ascending: true })
+      .order("finished_at", { ascending: true })
+      .limit(1000);
     if (error) throw error;
-    return true;
+    return getBestAttempts((data || []).map(dbAttemptToLocal));
+  }
+
+  async function dbSaveAttempt(attempt) {
+    const db = getSupabase();
+    if (!db) return { saved: false, improved: false, local: true };
+    const table = config.tables?.attempts || "ranked_attempts";
+    const phone = normalizePhone(attempt.phone);
+
+    const { data: existingRows, error: loadError } = await db
+      .from(table)
+      .select("*")
+      .eq("phone", phone);
+    if (loadError) throw loadError;
+
+    const existingAttempts = (existingRows || []).map(dbAttemptToLocal);
+    const bestExisting = existingAttempts.length
+      ? existingAttempts.reduce((best, item) => (isBetterAttempt(item, best) ? item : best), existingAttempts[0])
+      : null;
+
+    if (bestExisting && existingRows.length > 1) {
+      const idsToDelete = existingRows
+        .filter((row) => row.id !== bestExisting.id)
+        .map((row) => row.id);
+      if (idsToDelete.length) await db.from(table).delete().in("id", idsToDelete);
+    }
+
+    if (!bestExisting) {
+      const { error } = await db.from(table).insert(attemptToDbPayload(attempt));
+      if (error) throw error;
+      return { saved: true, improved: true, inserted: true };
+    }
+
+    if (isBetterAttempt(attempt, bestExisting)) {
+      const { error } = await db
+        .from(table)
+        .update(attemptToDbPayload(attempt, bestExisting.id))
+        .eq("id", bestExisting.id);
+      if (error) throw error;
+      return { saved: true, improved: true, updated: true };
+    }
+
+    // Natija yaxshilanmasa ham profil ma’lumotlari reytingda yangilanib tursin.
+    const { error } = await db
+      .from(table)
+      .update({
+        profile_id: attempt.profileId,
+        full_name: attempt.fullName,
+        company: attempt.company,
+        department: attempt.department,
+        position: attempt.position
+      })
+      .eq("id", bestExisting.id);
+    if (error) throw error;
+    return { saved: true, improved: false, kept: true };
   }
 
   function formatTime(seconds) {
@@ -261,6 +333,13 @@
     return pool;
   }
 
+  function isBetterAttempt(a, b) {
+    if (!b) return true;
+    if (a.percent !== b.percent) return a.percent > b.percent;
+    if (a.durationSeconds !== b.durationSeconds) return a.durationSeconds < b.durationSeconds;
+    return new Date(a.finishedAt) < new Date(b.finishedAt);
+  }
+
   function getBestAttempts(allAttempts = attempts) {
     const map = new Map();
     allAttempts.forEach((item) => {
@@ -275,10 +354,13 @@
     });
   }
 
-  function isBetterAttempt(a, b) {
-    if (a.percent !== b.percent) return a.percent > b.percent;
-    if (a.durationSeconds !== b.durationSeconds) return a.durationSeconds < b.durationSeconds;
-    return new Date(a.finishedAt) < new Date(b.finishedAt);
+  function upsertLocalBestAttempt(list, attempt) {
+    const key = normalizePhone(attempt.phone) || attempt.profileId || attempt.fullName;
+    const others = getBestAttempts(list).filter((item) => (normalizePhone(item.phone) || item.profileId || item.fullName) !== key);
+    const previous = getBestAttempts(list).find((item) => (normalizePhone(item.phone) || item.profileId || item.fullName) === key);
+    const improved = !previous || isBetterAttempt(attempt, previous);
+    const next = improved ? attempt : previous;
+    return { attempts: getBestAttempts([next, ...others]), improved };
   }
 
   function currentRank() {
@@ -289,18 +371,10 @@
     return index >= 0 ? index + 1 : null;
   }
 
-  function myAttempts() {
-    if (!profile) return [];
-    const key = normalizePhone(profile.phone);
-    return attempts
-      .filter((item) => normalizePhone(item.phone) === key || item.profileId === profile.id)
-      .sort((a, b) => new Date(b.finishedAt) - new Date(a.finishedAt));
-  }
-
   function myBestAttempt() {
-    const list = myAttempts();
-    if (!list.length) return null;
-    return list.reduce((best, item) => (isBetterAttempt(item, best) ? item : best), list[0]);
+    if (!profile) return null;
+    const key = normalizePhone(profile.phone);
+    return getBestAttempts(attempts).find((item) => normalizePhone(item.phone) === key || item.profileId === profile.id) || null;
   }
 
   function renderAvatar(data = profile) {
@@ -328,48 +402,55 @@
   function renderProfileForm(mode = "create", message = "") {
     const p = profile || {};
     app.innerHTML = `
-      <section class="ranked-card">
-        <h2>${mode === "edit" ? "Profilni tahrirlash" : "Reytingli testga kirish"}</h2>
-        <p>Bir xodim telefon va kompyuterdan kirganda ham bitta profil bo‘lishi uchun telefon raqam va 4 xonali PIN ishlatiladi.</p>
-        ${localModeNotice()}
-        ${message ? `<div class="ranked-note">${escapeHtml(message)}</div>` : ""}
-        <form id="profileForm">
-          <div class="ranked-grid">
-            <div class="ranked-field">
-              <label for="fullName">Ism-familiya</label>
-              <input id="fullName" name="fullName" value="${escapeHtml(p.fullName || "")}" placeholder="Masalan: Aliyev Alisher" required />
-            </div>
-            <div class="ranked-field">
-              <label for="company">Korxona</label>
-              <input id="company" name="company" value="${escapeHtml(p.company || "")}" placeholder="Masalan: Andijon vagon deposi" required />
-            </div>
-            <div class="ranked-field">
-              <label for="department">Uchastka / bo‘lim</label>
-              <input id="department" name="department" value="${escapeHtml(p.department || "")}" placeholder="Masalan: g‘ildirak juftligi sexi" required />
-            </div>
-            <div class="ranked-field">
-              <label for="position">Lavozim</label>
-              <input id="position" name="position" value="${escapeHtml(p.position || "")}" placeholder="Masalan: chilangar, usta, brigadir" required />
-            </div>
-            <div class="ranked-field">
-              <label for="phone">Telefon raqam</label>
-              <input id="phone" name="phone" value="${escapeHtml(p.phone || "")}" placeholder="+998901234567" required />
-            </div>
-            <div class="ranked-field">
-              <label for="pin">4 xonali PIN</label>
-              <input id="pin" name="pin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Masalan: 2580" ${mode === "edit" ? "" : "required"} />
-            </div>
-            <div class="ranked-field">
-              <label for="avatar">Profil rasmi</label>
-              <input id="avatar" name="avatar" type="file" accept="image/*" />
-            </div>
-          </div>
-          <div class="ranked-actions">
-            <button class="primary" type="submit">${mode === "edit" ? "Saqlash" : "Kirish / profil yaratish"}</button>
-            ${mode === "edit" ? `<button id="cancelEdit" class="secondary" type="button">Bekor qilish</button>` : ""}
-          </div>
-        </form>
-      </section>
+      <div class="ranked-dashboard-layout">
+        <div class="ranked-main-column">
+          <section class="ranked-card">
+            <h2>${mode === "edit" ? "Profilni tahrirlash" : "Reytingli testga kirish"}</h2>
+            <p>Bir xodim telefon va kompyuterdan kirganda ham bitta profil bo‘lishi uchun telefon raqam va 4 xonali PIN ishlatiladi.</p>
+            ${localModeNotice()}
+            ${message ? `<div class="ranked-note">${escapeHtml(message)}</div>` : ""}
+            <form id="profileForm">
+              <div class="ranked-grid">
+                <div class="ranked-field">
+                  <label for="fullName">Ism-familiya</label>
+                  <input id="fullName" name="fullName" value="${escapeHtml(p.fullName || "")}" placeholder="Masalan: Aliyev Alisher" required />
+                </div>
+                <div class="ranked-field">
+                  <label for="company">Korxona</label>
+                  <input id="company" name="company" value="${escapeHtml(p.company || "")}" placeholder="Masalan: Andijon vagon deposi" required />
+                </div>
+                <div class="ranked-field">
+                  <label for="department">Uchastka / bo‘lim</label>
+                  <input id="department" name="department" value="${escapeHtml(p.department || "")}" placeholder="Masalan: g‘ildirak juftligi sexi" required />
+                </div>
+                <div class="ranked-field">
+                  <label for="position">Lavozim</label>
+                  <input id="position" name="position" value="${escapeHtml(p.position || "")}" placeholder="Masalan: chilangar, usta, brigadir" required />
+                </div>
+                <div class="ranked-field">
+                  <label for="phone">Telefon raqam</label>
+                  <input id="phone" name="phone" value="${escapeHtml(p.phone || "")}" placeholder="+998901234567" required />
+                </div>
+                <div class="ranked-field">
+                  <label for="pin">4 xonali PIN</label>
+                  <input id="pin" name="pin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Masalan: 2580" ${mode === "edit" ? "" : "required"} />
+                </div>
+                <div class="ranked-field">
+                  <label for="avatar">Profil rasmi</label>
+                  <input id="avatar" name="avatar" type="file" accept="image/*" />
+                </div>
+              </div>
+              <div class="ranked-actions">
+                <button class="primary" type="submit">${mode === "edit" ? "Saqlash" : "Kirish / profil yaratish"}</button>
+                ${mode === "edit" ? `<button id="cancelEdit" class="secondary" type="button">Bekor qilish</button>` : ""}
+              </div>
+            </form>
+          </section>
+        </div>
+        <aside class="leaderboard-sidebar">
+          ${renderLeaderboard()}
+        </aside>
+      </div>
     `;
     document.getElementById("profileForm")?.addEventListener("submit", submitProfileForm);
     document.getElementById("cancelEdit")?.addEventListener("click", renderDashboard);
@@ -434,72 +515,75 @@
     const pool = buildPool();
     const rank = currentRank();
     const best = myBestAttempt();
-    const mine = myAttempts();
     app.innerHTML = `
-      <section class="ranked-card">
-        <div class="profile-head">
-          ${renderAvatar(profile)}
-          <div>
-            <h2 class="profile-name">${escapeHtml(profile.fullName)}</h2>
-            <p class="profile-meta">${escapeHtml(profile.company)} · ${escapeHtml(profile.department)} · ${escapeHtml(profile.position)}</p>
-            <p class="profile-meta">Telefon: ${escapeHtml(profile.phone)}</p>
-          </div>
-          <div class="ranked-actions">
-            <button id="editProfile" class="secondary" type="button">Profilni tahrirlash</button>
-          </div>
-        </div>
-        ${localModeNotice()}
-        <div class="stats-grid">
-          <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Mening reytingim</span></div>
-          <div class="stat-box"><strong>${best ? `${best.percent}%` : "—"}</strong><span>Eng yaxshi natija</span></div>
-          <div class="stat-box"><strong>${best ? formatTime(best.durationSeconds) : "—"}</strong><span>Eng yaxshi vaqt</span></div>
-          <div class="stat-box"><strong>${mine.length}</strong><span>Jami urinish</span></div>
-        </div>
-      </section>
+      <div class="ranked-dashboard-layout">
+        <div class="ranked-main-column">
+          <section class="ranked-card compact-profile-card">
+            <div class="profile-head">
+              ${renderAvatar(profile)}
+              <div>
+                <h2 class="profile-name">${escapeHtml(profile.fullName)}</h2>
+                <p class="profile-meta">${escapeHtml(profile.company)} · ${escapeHtml(profile.department)} · ${escapeHtml(profile.position)}</p>
+                <p class="profile-meta">Telefon: ${escapeHtml(profile.phone)}</p>
+              </div>
+              <div class="ranked-actions">
+                <button id="editProfile" class="secondary" type="button">Profilni tahrirlash</button>
+              </div>
+            </div>
+            ${localModeNotice()}
+            <div class="stats-grid">
+              <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Mening o‘rnim</span></div>
+              <div class="stat-box"><strong>${best ? `${best.percent}%` : "—"}</strong><span>Eng yaxshi natija</span></div>
+              <div class="stat-box"><strong>${best ? formatTime(best.durationSeconds) : "—"}</strong><span>Eng yaxshi vaqt</span></div>
+              <div class="stat-box"><strong>${best ? formatDate(best.finishedAt) : "—"}</strong><span>Oxirgi yaxshi natija</span></div>
+            </div>
+          </section>
 
-      <section class="ranked-card start-panel">
-        <div>
-          <span class="mini-label">Savollar bazasi: ${pool.length} ta</span>
-          <h2>Testni boshlash</h2>
-          <p>Barcha kategoriya testlari umumiy bazaga yig‘iladi. Har safar savollar ham, javoblar ham aralash tartibda chiqadi.</p>
-          <div class="count-selector">
-            ${["20", "30", "50", "all"].map((value) => `
-              <label>
-                <input type="radio" name="rankedCount" value="${value}" ${selectedCount === value ? "checked" : ""}>
-                ${value === "all" ? `Barchasi (${pool.length})` : `${value} ta savol`}
-              </label>
-            `).join("")}
-          </div>
+          <section class="ranked-card start-panel start-panel-strong">
+            <div>
+              <span class="mini-label">Savollar bazasi: ${pool.length} ta</span>
+              <h2>Testni boshlash</h2>
+              <p>Barcha kategoriya testlari avtomatik umumiy testga kiradi. Savollar va javoblar har safar aralash tartibda chiqadi.</p>
+              <div class="start-summary">
+                <b>${pool.length} ta savol</b>
+                <span>Alohida tanlash yo‘q — umumiy testda bazadagi hamma savollar ishlatiladi.</span>
+              </div>
+            </div>
+            <div class="ranked-actions start-action-wrap">
+              <button id="startRankedTest" class="primary start-button-big" type="button">Testni boshlash</button>
+            </div>
+          </section>
         </div>
-        <div class="ranked-actions">
-          <button id="startRankedTest" class="primary" type="button">Boshlash</button>
-        </div>
-      </section>
-
-      ${renderLeaderboard()}
-      ${renderHistory()}
+        <aside class="leaderboard-sidebar">
+          ${renderLeaderboard()}
+        </aside>
+      </div>
     `;
     document.getElementById("editProfile")?.addEventListener("click", () => renderProfileForm("edit"));
-    document.querySelectorAll("input[name='rankedCount']").forEach((input) => {
-      input.addEventListener("change", (event) => {
-        selectedCount = event.target.value;
-        localStorage.setItem(QUIZ_COUNT_KEY, selectedCount);
-      });
-    });
     document.getElementById("startRankedTest")?.addEventListener("click", startQuiz);
   }
 
   function renderLeaderboard() {
-    const best = getBestAttempts().slice(0, 100);
-    if (!best.length) {
-      return `<section class="ranked-card"><h2>Reyting jadvali</h2><p>Hali reyting natijalari yo‘q. Birinchi testni yeching.</p></section>`;
-    }
+    const best = getBestAttempts().slice(0, 200);
     const myKey = normalizePhone(profile?.phone);
+    if (!best.length) {
+      return `
+        <section class="ranked-card public-leaderboard">
+          <div class="leaderboard-title-row">
+            <div>
+              <span class="mini-label">Hammaga ko‘rinadi</span>
+              <h2>Umumiy reyting jadvali</h2>
+            </div>
+          </div>
+          <p>Hali reyting natijalari yo‘q. Birinchi test yakunlangandan keyin shu yerda ko‘rinadi.</p>
+        </section>
+      `;
+    }
     const rows = best.map((item, index) => {
       const isMe = normalizePhone(item.phone) === myKey;
       return `
         <tr class="${isMe ? "me-row" : ""}">
-          <td><b>${index + 1}</b></td>
+          <td class="rank-cell"><b>${index + 1}</b></td>
           <td><span class="leaderboard-name">${escapeHtml(item.fullName)}</span><span class="leaderboard-sub">${escapeHtml(item.company)} · ${escapeHtml(item.department)}</span></td>
           <td><b>${item.percent}%</b><span class="leaderboard-sub">${item.correct}/${item.total}</span></td>
           <td>${formatTime(item.durationSeconds)}</td>
@@ -508,30 +592,23 @@
       `;
     }).join("");
     return `
-      <section class="ranked-card">
-        <h2>Reyting jadvali</h2>
-        <table class="leaderboard-table">
-          <thead><tr><th>O‘rin</th><th>Xodim</th><th>Natija</th><th>Vaqt</th><th>Sana</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+      <section class="ranked-card public-leaderboard">
+        <div class="leaderboard-title-row">
+          <div>
+            <span class="mini-label">Hammaga ko‘rinadi</span>
+            <h2>Umumiy reyting jadvali</h2>
+          </div>
+          <span class="leaderboard-count">${best.length} xodim</span>
+        </div>
+        <p class="leaderboard-help">Har bir xodim bo‘yicha faqat eng yaxshi natija ko‘rsatiladi. Yangi natija yaxshiroq bo‘lsa, eskisi avtomatik yangilanadi.</p>
+        <div class="leaderboard-scroll">
+          <table class="leaderboard-table">
+            <thead><tr><th>O‘rin</th><th>Xodim</th><th>Natija</th><th>Vaqt</th><th>Sana</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
       </section>
     `;
-  }
-
-  function renderHistory() {
-    const mine = myAttempts().slice(0, 10);
-    if (!mine.length) return "";
-    const items = mine.map((item) => `
-      <div class="history-item">
-        <div class="history-score">${item.percent}%</div>
-        <div>
-          <b>${item.correct}/${item.total} ta to‘g‘ri javob</b><br>
-          <span>${formatDate(item.finishedAt)}</span>
-        </div>
-        <div>${formatTime(item.durationSeconds)}</div>
-      </div>
-    `).join("");
-    return `<section class="ranked-card"><h2>Mening urinishlarim</h2><div class="history-list">${items}</div></section>`;
   }
 
   function startQuiz() {
@@ -540,8 +617,7 @@
       alert("Savollar bazasi topilmadi. data/category-tests-data.js faylini tekshiring.");
       return;
     }
-    const limit = selectedCount === "all" ? pool.length : Math.min(Number(selectedCount), pool.length);
-    quiz = shuffleArray(pool).slice(0, limit).map((q) => {
+    quiz = shuffleArray(pool).map((q) => {
       const options = shuffleArray(q.options.map((text, index) => ({ text, correct: index === q.answerIndex })));
       return { ...q, options };
     });
@@ -668,20 +744,36 @@
       source: isSupabaseReady() ? "supabase" : "local"
     };
 
-    attempts = [attempt, ...attempts];
-    saveLocalAttempts(attempts);
-    let saveMessage = "Natija ushbu qurilma xotirasiga saqlandi.";
+    let saveMessage = "Natija ushbu qurilma xotirasida tekshirildi.";
+    let improved = true;
+
     if (isSupabaseReady()) {
       try {
-        await dbSaveAttempt(attempt);
+        const result = await dbSaveAttempt(attempt);
         attempts = await dbLoadAttempts();
         saveLocalAttempts(attempts);
-        saveMessage = "Natija umumiy Supabase reyting bazasiga saqlandi.";
+        improved = Boolean(result.improved);
+        saveMessage = improved
+          ? "Natija oldingi natijadan yaxshi bo‘ldi va umumiy reytingda yangilandi."
+          : "Oldingi eng yaxshi natijangiz bundan yuqori yoki tezroq. Reytingdagi eski yaxshi natija saqlab qolindi.";
       } catch (error) {
-        saveMessage = `Supabasega yozishda xatolik: ${escapeHtml(error.message || "noma’lum xatolik")}. Natija vaqtincha localStorage’da saqlandi.`;
+        const localResult = upsertLocalBestAttempt(attempts, attempt);
+        attempts = localResult.attempts;
+        improved = localResult.improved;
+        saveLocalAttempts(attempts);
+        saveMessage = `Supabasega yozishda xatolik: ${escapeHtml(error.message || "noma’lum xatolik")}. Natija vaqtincha localStorage’da tekshirildi.`;
       }
+    } else {
+      const localResult = upsertLocalBestAttempt(attempts, attempt);
+      attempts = localResult.attempts;
+      improved = localResult.improved;
+      saveLocalAttempts(attempts);
+      saveMessage = improved
+        ? "Natija ushbu qurilmadagi eng yaxshi natija sifatida saqlandi."
+        : "Oldingi eng yaxshi natijangiz bundan yuqori yoki tezroq. Eski yaxshi natija saqlandi.";
     }
 
+    const best = myBestAttempt() || attempt;
     const rank = currentRank();
     app.innerHTML = `
       <section class="ranked-card result-card">
@@ -691,13 +783,13 @@
         <div class="ranked-note">${saveMessage}</div>
         <div class="stats-grid">
           <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Joriy o‘rin</span></div>
-          <div class="stat-box"><strong>${percent}%</strong><span>Natija</span></div>
-          <div class="stat-box"><strong>${formatTime(durationSeconds)}</strong><span>Vaqt</span></div>
-          <div class="stat-box"><strong>${formatDate(finishedAt)}</strong><span>Sana</span></div>
+          <div class="stat-box"><strong>${best.percent}%</strong><span>Reytingdagi natija</span></div>
+          <div class="stat-box"><strong>${formatTime(best.durationSeconds)}</strong><span>Reytingdagi vaqt</span></div>
+          <div class="stat-box"><strong>${formatDate(best.finishedAt)}</strong><span>Reyting sanasi</span></div>
         </div>
         <div class="ranked-actions center">
           <button id="backDashboard" class="primary" type="button">Profil va reytingga qaytish</button>
-          <button id="restartRanked" class="secondary" type="button">Qayta ishlash</button>
+          <button id="restartRanked" class="secondary" type="button">Yana test yechish</button>
         </div>
       </section>
       ${renderLeaderboard()}
@@ -713,7 +805,7 @@
 
   async function init() {
     profile = loadLocalProfile();
-    attempts = loadLocalAttempts();
+    attempts = getBestAttempts(loadLocalAttempts());
     if (isSupabaseReady()) {
       try {
         attempts = await dbLoadAttempts();

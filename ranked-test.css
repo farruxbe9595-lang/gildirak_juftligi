@@ -60,3 +60,130 @@ html[data-theme="dark"] .stat-box strong, html[data-theme="dark"] .history-score
 html[data-theme="dark"] .ranked-option.correct, html[data-theme="dark"] .answer-info.good { background: #0e2a20; border-color: #2dcc89; color: #d7ffee; }
 html[data-theme="dark"] .ranked-option.wrong, html[data-theme="dark"] .answer-info.bad { background: #2a1518; border-color: #e05a5a; color: #ffe0e0; }
 @media (max-width: 780px) { .ranked-hero, .start-panel, .quiz-header, .profile-head { grid-template-columns: 1fr; flex-direction: column; align-items: stretch; } .ranked-grid, .stats-grid { grid-template-columns: 1fr; } .leaderboard-table { font-size: 13px; } .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { display: none; } .history-item { grid-template-columns: 1fr; } }
+
+/* 2026-06 update: umumiy testda barcha savollar avtomatik, reyting alohida ommaviy blokda */
+.ranked-dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
+  gap: 20px;
+  align-items: start;
+}
+.ranked-main-column { min-width: 0; }
+.leaderboard-sidebar {
+  position: sticky;
+  top: 18px;
+  min-width: 0;
+}
+.public-leaderboard {
+  border: 2px solid #c7e6ff;
+  box-shadow: 0 18px 46px rgba(15, 95, 157, .12);
+}
+.leaderboard-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.leaderboard-title-row h2 { margin-bottom: 0; }
+.leaderboard-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #0f5f9d;
+  color: #fff;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.leaderboard-help {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.leaderboard-scroll {
+  max-height: 560px;
+  overflow: auto;
+  border: 1px solid #e5edf7;
+  border-radius: 16px;
+}
+.leaderboard-scroll .leaderboard-table { border-radius: 0; }
+.leaderboard-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.rank-cell b {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #edf6ff;
+  color: #0f5f9d;
+}
+.start-panel-strong {
+  border: 2px solid #b9dcff;
+  background: linear-gradient(135deg, #ffffff 0%, #eef7ff 100%);
+}
+.start-summary {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  color: #0f3766;
+}
+.start-summary b {
+  display: inline-flex;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #0f5f9d;
+  color: #fff;
+  font-size: 17px;
+}
+.start-summary span {
+  font-weight: 700;
+}
+.start-action-wrap { justify-content: flex-end; }
+.start-button-big {
+  min-width: 190px;
+  padding: 16px 24px !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 28px rgba(15, 95, 157, .22);
+}
+.compact-profile-card { margin-bottom: 20px; }
+html[data-theme="dark"] .public-leaderboard {
+  border-color: #31557a;
+  box-shadow: 0 18px 46px rgba(0,0,0,.28);
+}
+html[data-theme="dark"] .leaderboard-count,
+html[data-theme="dark"] .start-summary b {
+  background: #71b7ff;
+  color: #081320;
+}
+html[data-theme="dark"] .leaderboard-scroll { border-color: #243650; }
+html[data-theme="dark"] .rank-cell b {
+  background: #13243b;
+  color: #9fd0ff;
+}
+html[data-theme="dark"] .start-panel-strong {
+  background: linear-gradient(135deg, #111c2f 0%, #13243b 100%);
+  border-color: #31557a;
+}
+html[data-theme="dark"] .start-summary { color: #9fd0ff; }
+@media (max-width: 1040px) {
+  .ranked-dashboard-layout { grid-template-columns: 1fr; }
+  .leaderboard-sidebar { position: static; }
+  .leaderboard-scroll { max-height: 520px; }
+}
+@media (max-width: 780px) {
+  .start-action-wrap { justify-content: stretch; }
+  .start-button-big { width: 100%; }
+  .leaderboard-scroll { max-height: 460px; }
+  .leaderboard-table th:nth-child(5),
+  .leaderboard-table td:nth-child(5) { display: none; }
+}

@@ -32,3 +32,12 @@ SUPABASE KEYINGI BOSQICH:
 
 ESLATMA:
 Agar butun repoga emas, alohida fayl sifatida yuklasangiz, data/category-tests-data.js albatta repo ichida qolishi kerak.
+
+
+2026-06 YANGILANISH:
+1) Umumiy reytingli testda 20/30/50/Barchasi tanlash joyi olib tashlandi.
+2) Test avtomatik bazadagi barcha savollar bilan boshlanadi.
+3) Reyting jadvali profil ichida emas, alohida ommaviy blok sifatida yon tomonda ko‘rinadi.
+4) Jadvalda har bir telefon raqam uchun faqat eng yaxshi natija ko‘rinadi.
+5) Yangi natija oldingidan yaxshi bo‘lsa, eski natija avtomatik yangilanadi. Yomonroq natija reytingni buzmaydi.
+6) Mavjud Supabase bazani tozalash uchun supabase/BEST_RESULT_ONLY_UPDATE.sql faylini SQL Editor’da bir marta Run qiling.
