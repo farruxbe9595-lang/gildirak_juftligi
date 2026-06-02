@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Umumiy reytingli savollar - G‘ildirak juftligi</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="category-tests.css" />
+  <link rel="stylesheet" href="ranked-test.css" />
+</head>
+<body>
+  <main class="container ranked-page">
+    <a class="back-link" href="category-tests.html">← Testlar bo‘limiga qaytish</a>
+
+    <section class="hero ranked-hero">
+      <div>
+        <span class="mini-label">🏆 Umumiy reytingli test</span>
+        <h1>Umumiy reytingli savollar</h1>
+        <p>
+          Bu bo‘lim testlar bazasidagi barcha kategoriya savollarini umumlashtiradi.
+          Har safar savollar va javoblar almashib tushadi, natija reytingda saqlanadi.
+        </p>
+      </div>
+      <button id="themeToggle" class="secondary" type="button">Tungi rejim</button>
+    </section>
+
+    <section id="rankedApp" class="ranked-app"></section>
+  </main>
+
+  <script src="theme.js"></script>
+  <script src="data/category-tests-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="ranked-test.js"></script>
+</body>
+</html>

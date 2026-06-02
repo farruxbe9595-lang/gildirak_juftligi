@@ -1,0 +1,737 @@
+(() => {
+  "use strict";
+
+  const PROFILE_KEY = "gj_ranked_profile_v1";
+  const ATTEMPTS_KEY = "gj_ranked_attempts_v1";
+  const ACTIVE_SESSION_KEY = "gj_ranked_active_session_v1";
+  const QUIZ_COUNT_KEY = "gj_ranked_count_v1";
+  const app = document.getElementById("rankedApp");
+  const categories = Array.isArray(window.CATEGORY_TESTS) ? window.CATEGORY_TESTS : [];
+  const config = window.SUPABASE_CONFIG || { enabled: false };
+  let supabaseClient = null;
+  let profile = null;
+  let attempts = [];
+  let quiz = [];
+  let answers = [];
+  let currentIndex = 0;
+  let startedAt = null;
+  let timerId = null;
+  let selectedCount = localStorage.getItem(QUIZ_COUNT_KEY) || "20";
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function normalizePhone(value) {
+    return String(value || "").replace(/[^0-9+]/g, "").replace(/^00/, "+").trim();
+  }
+
+  function uid() {
+    if (crypto?.randomUUID) return crypto.randomUUID();
+    return `id_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  async function sha256(text) {
+    const data = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function pinHash(phone, pin) {
+    return sha256(`${normalizePhone(phone)}|${String(pin || "").trim()}|gildirak_ranked_v1`);
+  }
+
+  function saveLocalProfile(data) {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
+    localStorage.setItem(ACTIVE_SESSION_KEY, "1");
+  }
+
+  function loadLocalProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveLocalAttempts(list) {
+    localStorage.setItem(ATTEMPTS_KEY, JSON.stringify(list));
+  }
+
+  function loadLocalAttempts() {
+    try {
+      const raw = localStorage.getItem(ATTEMPTS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function isSupabaseReady() {
+    return Boolean(config.enabled && config.url && config.anonKey && window.supabase);
+  }
+
+  function getSupabase() {
+    if (!isSupabaseReady()) return null;
+    if (!supabaseClient) {
+      supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+    }
+    return supabaseClient;
+  }
+
+  async function dbGetProfileByPhone(phone) {
+    const db = getSupabase();
+    if (!db) return null;
+    const { data, error } = await db
+      .from(config.tables?.profiles || "ranked_profiles")
+      .select("*")
+      .eq("phone", normalizePhone(phone))
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  async function dbSaveProfile(data) {
+    const db = getSupabase();
+    if (!db) return data;
+    const payload = {
+      id: data.id,
+      full_name: data.fullName,
+      company: data.company,
+      department: data.department,
+      position: data.position,
+      phone: normalizePhone(data.phone),
+      pin_hash: data.pinHash,
+      avatar_data: data.avatarData || null,
+      updated_at: new Date().toISOString()
+    };
+    const { data: saved, error } = await db
+      .from(config.tables?.profiles || "ranked_profiles")
+      .upsert(payload, { onConflict: "phone" })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return dbProfileToLocal(saved);
+  }
+
+  function dbProfileToLocal(row) {
+    return {
+      id: row.id,
+      fullName: row.full_name,
+      company: row.company,
+      department: row.department,
+      position: row.position,
+      phone: row.phone,
+      pinHash: row.pin_hash,
+      avatarData: row.avatar_data || "",
+      synced: true,
+      updatedAt: row.updated_at || new Date().toISOString()
+    };
+  }
+
+  async function dbLoadAttempts() {
+    const db = getSupabase();
+    if (!db) return loadLocalAttempts();
+    const { data, error } = await db
+      .from(config.tables?.attempts || "ranked_attempts")
+      .select("*")
+      .order("finished_at", { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    return (data || []).map((row) => ({
+      id: row.id,
+      profileId: row.profile_id,
+      phone: row.phone,
+      fullName: row.full_name,
+      company: row.company,
+      department: row.department,
+      position: row.position,
+      total: row.total_questions,
+      correct: row.correct_count,
+      percent: row.percent,
+      durationSeconds: row.duration_seconds,
+      startedAt: row.started_at,
+      finishedAt: row.finished_at,
+      source: row.source || "supabase"
+    }));
+  }
+
+  async function dbSaveAttempt(attempt) {
+    const db = getSupabase();
+    if (!db) return null;
+    const payload = {
+      id: attempt.id,
+      profile_id: attempt.profileId,
+      phone: normalizePhone(attempt.phone),
+      full_name: attempt.fullName,
+      company: attempt.company,
+      department: attempt.department,
+      position: attempt.position,
+      total_questions: attempt.total,
+      correct_count: attempt.correct,
+      percent: attempt.percent,
+      duration_seconds: attempt.durationSeconds,
+      started_at: attempt.startedAt,
+      finished_at: attempt.finishedAt,
+      source: "ranked-general-test"
+    };
+    const { error } = await db.from(config.tables?.attempts || "ranked_attempts").insert(payload);
+    if (error) throw error;
+    return true;
+  }
+
+  function formatTime(seconds) {
+    const s = Math.max(0, Number(seconds) || 0);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    if (m >= 60) {
+      const h = Math.floor(m / 60);
+      const mm = m % 60;
+      return `${h}:${String(mm).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+    }
+    return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+  }
+
+  function formatDate(value) {
+    if (!value) return "—";
+    return new Intl.DateTimeFormat("uz-UZ", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date(value));
+  }
+
+  function initials(name) {
+    const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    return parts.slice(0, 2).map((x) => x[0]?.toUpperCase()).join("");
+  }
+
+  function shuffleArray(list) {
+    const arr = [...list];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function getQuestionText(q) {
+    return q.q || q.question || q.title || "";
+  }
+
+  function getExplanation(q) {
+    return String(q.explanation || q.izoh || q.comment || q.source || q.note || "").trim();
+  }
+
+  function buildPool() {
+    const seen = new Set();
+    const pool = [];
+    categories.forEach((cat) => {
+      (cat.questions || []).forEach((q, index) => {
+        const question = getQuestionText(q).trim();
+        const options = Array.isArray(q.options) ? q.options.filter((x) => String(x || "").trim()) : [];
+        const answer = Number(q.answer);
+        if (!question || options.length < 2 || Number.isNaN(answer) || !options[answer]) return;
+        const key = `${question.toLowerCase()}__${options.join("|").toLowerCase()}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        pool.push({
+          id: `${cat.id || "cat"}_${q.originalNumber || q.number || index + 1}`,
+          categoryId: cat.id || "",
+          categoryTitle: cat.title || "Test",
+          number: q.number || index + 1,
+          originalNumber: q.originalNumber || q.number || index + 1,
+          question,
+          options,
+          answerIndex: answer,
+          explanation: getExplanation(q)
+        });
+      });
+    });
+    return pool;
+  }
+
+  function getBestAttempts(allAttempts = attempts) {
+    const map = new Map();
+    allAttempts.forEach((item) => {
+      const key = normalizePhone(item.phone) || item.profileId || item.fullName;
+      const prev = map.get(key);
+      if (!prev || isBetterAttempt(item, prev)) map.set(key, item);
+    });
+    return [...map.values()].sort((a, b) => {
+      if (b.percent !== a.percent) return b.percent - a.percent;
+      if (a.durationSeconds !== b.durationSeconds) return a.durationSeconds - b.durationSeconds;
+      return new Date(a.finishedAt) - new Date(b.finishedAt);
+    });
+  }
+
+  function isBetterAttempt(a, b) {
+    if (a.percent !== b.percent) return a.percent > b.percent;
+    if (a.durationSeconds !== b.durationSeconds) return a.durationSeconds < b.durationSeconds;
+    return new Date(a.finishedAt) < new Date(b.finishedAt);
+  }
+
+  function currentRank() {
+    if (!profile) return null;
+    const best = getBestAttempts();
+    const key = normalizePhone(profile.phone) || profile.id;
+    const index = best.findIndex((item) => (normalizePhone(item.phone) || item.profileId) === key);
+    return index >= 0 ? index + 1 : null;
+  }
+
+  function myAttempts() {
+    if (!profile) return [];
+    const key = normalizePhone(profile.phone);
+    return attempts
+      .filter((item) => normalizePhone(item.phone) === key || item.profileId === profile.id)
+      .sort((a, b) => new Date(b.finishedAt) - new Date(a.finishedAt));
+  }
+
+  function myBestAttempt() {
+    const list = myAttempts();
+    if (!list.length) return null;
+    return list.reduce((best, item) => (isBetterAttempt(item, best) ? item : best), list[0]);
+  }
+
+  function renderAvatar(data = profile) {
+    if (data?.avatarData) return `<div class="avatar"><img src="${escapeHtml(data.avatarData)}" alt="Profil rasmi"></div>`;
+    return `<div class="avatar">${escapeHtml(initials(data?.fullName))}</div>`;
+  }
+
+  async function readAvatar(file) {
+    if (!file) return "";
+    if (!file.type.startsWith("image/")) throw new Error("Faqat rasm fayli yuklash mumkin.");
+    if (file.size > 700 * 1024) throw new Error("Rasm hajmi 700 KB dan oshmasin. Juda katta rasm saytni sekinlashtiradi.");
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Rasmni o‘qib bo‘lmadi."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function localModeNotice() {
+    if (isSupabaseReady()) return "";
+    return `<div class="ranked-warning"><b>Hozir mahalliy rejim:</b> natijalar faqat shu telefon/kompyuter xotirasida saqlanadi. Supabase ulangandan keyin umumiy reyting hamma qurilmada bir xil ishlaydi.</div>`;
+  }
+
+  function renderProfileForm(mode = "create", message = "") {
+    const p = profile || {};
+    app.innerHTML = `
+      <section class="ranked-card">
+        <h2>${mode === "edit" ? "Profilni tahrirlash" : "Reytingli testga kirish"}</h2>
+        <p>Bir xodim telefon va kompyuterdan kirganda ham bitta profil bo‘lishi uchun telefon raqam va 4 xonali PIN ishlatiladi.</p>
+        ${localModeNotice()}
+        ${message ? `<div class="ranked-note">${escapeHtml(message)}</div>` : ""}
+        <form id="profileForm">
+          <div class="ranked-grid">
+            <div class="ranked-field">
+              <label for="fullName">Ism-familiya</label>
+              <input id="fullName" name="fullName" value="${escapeHtml(p.fullName || "")}" placeholder="Masalan: Aliyev Alisher" required />
+            </div>
+            <div class="ranked-field">
+              <label for="company">Korxona</label>
+              <input id="company" name="company" value="${escapeHtml(p.company || "")}" placeholder="Masalan: Andijon vagon deposi" required />
+            </div>
+            <div class="ranked-field">
+              <label for="department">Uchastka / bo‘lim</label>
+              <input id="department" name="department" value="${escapeHtml(p.department || "")}" placeholder="Masalan: g‘ildirak juftligi sexi" required />
+            </div>
+            <div class="ranked-field">
+              <label for="position">Lavozim</label>
+              <input id="position" name="position" value="${escapeHtml(p.position || "")}" placeholder="Masalan: chilangar, usta, brigadir" required />
+            </div>
+            <div class="ranked-field">
+              <label for="phone">Telefon raqam</label>
+              <input id="phone" name="phone" value="${escapeHtml(p.phone || "")}" placeholder="+998901234567" required />
+            </div>
+            <div class="ranked-field">
+              <label for="pin">4 xonali PIN</label>
+              <input id="pin" name="pin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Masalan: 2580" ${mode === "edit" ? "" : "required"} />
+            </div>
+            <div class="ranked-field">
+              <label for="avatar">Profil rasmi</label>
+              <input id="avatar" name="avatar" type="file" accept="image/*" />
+            </div>
+          </div>
+          <div class="ranked-actions">
+            <button class="primary" type="submit">${mode === "edit" ? "Saqlash" : "Kirish / profil yaratish"}</button>
+            ${mode === "edit" ? `<button id="cancelEdit" class="secondary" type="button">Bekor qilish</button>` : ""}
+          </div>
+        </form>
+      </section>
+    `;
+    document.getElementById("profileForm")?.addEventListener("submit", submitProfileForm);
+    document.getElementById("cancelEdit")?.addEventListener("click", renderDashboard);
+  }
+
+  async function submitProfileForm(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submitButton = form.querySelector("button[type='submit']");
+    submitButton.disabled = true;
+    submitButton.textContent = "Tekshirilmoqda...";
+    try {
+      const formData = new FormData(form);
+      const phone = normalizePhone(formData.get("phone"));
+      const pin = String(formData.get("pin") || "").trim();
+      const existingAvatar = profile?.avatarData || "";
+      const avatarFile = formData.get("avatar");
+      const avatarData = avatarFile && avatarFile.size ? await readAvatar(avatarFile) : existingAvatar;
+      const computedPinHash = pin ? await pinHash(phone, pin) : profile?.pinHash;
+      if (!computedPinHash) throw new Error("PIN kiriting.");
+
+      const nextProfile = {
+        id: profile?.id || uid(),
+        fullName: String(formData.get("fullName") || "").trim(),
+        company: String(formData.get("company") || "").trim(),
+        department: String(formData.get("department") || "").trim(),
+        position: String(formData.get("position") || "").trim(),
+        phone,
+        pinHash: computedPinHash,
+        avatarData,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (!nextProfile.fullName || !nextProfile.company || !nextProfile.department || !nextProfile.position || !nextProfile.phone) {
+        throw new Error("Barcha majburiy maydonlarni to‘ldiring.");
+      }
+
+      if (isSupabaseReady()) {
+        const existing = await dbGetProfileByPhone(phone);
+        if (existing && existing.pin_hash && existing.pin_hash !== computedPinHash) {
+          throw new Error("Bu telefon raqam oldin ro‘yxatdan o‘tgan. PIN noto‘g‘ri kiritildi.");
+        }
+        if (existing?.id) nextProfile.id = existing.id;
+        profile = await dbSaveProfile(nextProfile);
+        attempts = await dbLoadAttempts();
+      } else {
+        const local = loadLocalProfile();
+        if (local && normalizePhone(local.phone) === phone && local.pinHash && local.pinHash !== computedPinHash) {
+          throw new Error("Bu qurilmada ushbu telefon uchun boshqa PIN saqlangan.");
+        }
+        profile = { ...nextProfile, synced: false };
+      }
+      saveLocalProfile(profile);
+      renderDashboard();
+    } catch (error) {
+      renderProfileForm(profile ? "edit" : "create", error.message || "Profilni saqlashda xatolik yuz berdi.");
+    }
+  }
+
+  function renderDashboard() {
+    if (!profile) return renderProfileForm();
+    const pool = buildPool();
+    const rank = currentRank();
+    const best = myBestAttempt();
+    const mine = myAttempts();
+    app.innerHTML = `
+      <section class="ranked-card">
+        <div class="profile-head">
+          ${renderAvatar(profile)}
+          <div>
+            <h2 class="profile-name">${escapeHtml(profile.fullName)}</h2>
+            <p class="profile-meta">${escapeHtml(profile.company)} · ${escapeHtml(profile.department)} · ${escapeHtml(profile.position)}</p>
+            <p class="profile-meta">Telefon: ${escapeHtml(profile.phone)}</p>
+          </div>
+          <div class="ranked-actions">
+            <button id="editProfile" class="secondary" type="button">Profilni tahrirlash</button>
+          </div>
+        </div>
+        ${localModeNotice()}
+        <div class="stats-grid">
+          <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Mening reytingim</span></div>
+          <div class="stat-box"><strong>${best ? `${best.percent}%` : "—"}</strong><span>Eng yaxshi natija</span></div>
+          <div class="stat-box"><strong>${best ? formatTime(best.durationSeconds) : "—"}</strong><span>Eng yaxshi vaqt</span></div>
+          <div class="stat-box"><strong>${mine.length}</strong><span>Jami urinish</span></div>
+        </div>
+      </section>
+
+      <section class="ranked-card start-panel">
+        <div>
+          <span class="mini-label">Savollar bazasi: ${pool.length} ta</span>
+          <h2>Testni boshlash</h2>
+          <p>Barcha kategoriya testlari umumiy bazaga yig‘iladi. Har safar savollar ham, javoblar ham aralash tartibda chiqadi.</p>
+          <div class="count-selector">
+            ${["20", "30", "50", "all"].map((value) => `
+              <label>
+                <input type="radio" name="rankedCount" value="${value}" ${selectedCount === value ? "checked" : ""}>
+                ${value === "all" ? `Barchasi (${pool.length})` : `${value} ta savol`}
+              </label>
+            `).join("")}
+          </div>
+        </div>
+        <div class="ranked-actions">
+          <button id="startRankedTest" class="primary" type="button">Boshlash</button>
+        </div>
+      </section>
+
+      ${renderLeaderboard()}
+      ${renderHistory()}
+    `;
+    document.getElementById("editProfile")?.addEventListener("click", () => renderProfileForm("edit"));
+    document.querySelectorAll("input[name='rankedCount']").forEach((input) => {
+      input.addEventListener("change", (event) => {
+        selectedCount = event.target.value;
+        localStorage.setItem(QUIZ_COUNT_KEY, selectedCount);
+      });
+    });
+    document.getElementById("startRankedTest")?.addEventListener("click", startQuiz);
+  }
+
+  function renderLeaderboard() {
+    const best = getBestAttempts().slice(0, 100);
+    if (!best.length) {
+      return `<section class="ranked-card"><h2>Reyting jadvali</h2><p>Hali reyting natijalari yo‘q. Birinchi testni yeching.</p></section>`;
+    }
+    const myKey = normalizePhone(profile?.phone);
+    const rows = best.map((item, index) => {
+      const isMe = normalizePhone(item.phone) === myKey;
+      return `
+        <tr class="${isMe ? "me-row" : ""}">
+          <td><b>${index + 1}</b></td>
+          <td><span class="leaderboard-name">${escapeHtml(item.fullName)}</span><span class="leaderboard-sub">${escapeHtml(item.company)} · ${escapeHtml(item.department)}</span></td>
+          <td><b>${item.percent}%</b><span class="leaderboard-sub">${item.correct}/${item.total}</span></td>
+          <td>${formatTime(item.durationSeconds)}</td>
+          <td>${formatDate(item.finishedAt)}</td>
+        </tr>
+      `;
+    }).join("");
+    return `
+      <section class="ranked-card">
+        <h2>Reyting jadvali</h2>
+        <table class="leaderboard-table">
+          <thead><tr><th>O‘rin</th><th>Xodim</th><th>Natija</th><th>Vaqt</th><th>Sana</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </section>
+    `;
+  }
+
+  function renderHistory() {
+    const mine = myAttempts().slice(0, 10);
+    if (!mine.length) return "";
+    const items = mine.map((item) => `
+      <div class="history-item">
+        <div class="history-score">${item.percent}%</div>
+        <div>
+          <b>${item.correct}/${item.total} ta to‘g‘ri javob</b><br>
+          <span>${formatDate(item.finishedAt)}</span>
+        </div>
+        <div>${formatTime(item.durationSeconds)}</div>
+      </div>
+    `).join("");
+    return `<section class="ranked-card"><h2>Mening urinishlarim</h2><div class="history-list">${items}</div></section>`;
+  }
+
+  function startQuiz() {
+    const pool = buildPool();
+    if (!pool.length) {
+      alert("Savollar bazasi topilmadi. data/category-tests-data.js faylini tekshiring.");
+      return;
+    }
+    const limit = selectedCount === "all" ? pool.length : Math.min(Number(selectedCount), pool.length);
+    quiz = shuffleArray(pool).slice(0, limit).map((q) => {
+      const options = shuffleArray(q.options.map((text, index) => ({ text, correct: index === q.answerIndex })));
+      return { ...q, options };
+    });
+    answers = Array(quiz.length).fill(null);
+    currentIndex = 0;
+    startedAt = new Date();
+    startTimer();
+    renderQuestion();
+    scrollToAppTop();
+  }
+
+  function startTimer() {
+    stopTimer();
+    timerId = window.setInterval(() => {
+      const timer = document.getElementById("quizTimer");
+      if (timer && startedAt) {
+        timer.textContent = formatTime(Math.floor((Date.now() - startedAt.getTime()) / 1000));
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerId) window.clearInterval(timerId);
+    timerId = null;
+  }
+
+  function renderQuestion() {
+    const q = quiz[currentIndex];
+    const answered = answers[currentIndex];
+    const progress = Math.round((currentIndex / quiz.length) * 100);
+    const optionsHtml = q.options.map((option, index) => {
+      let cls = "ranked-option";
+      if (answered) {
+        if (option.correct) cls += " correct";
+        if (answered.selectedIndex === index && !option.correct) cls += " wrong";
+      }
+      return `<button class="${cls}" type="button" data-option="${index}" ${answered ? "disabled" : ""}><b>${String.fromCharCode(65 + index)})</b> <span>${escapeHtml(option.text)}</span></button>`;
+    }).join("");
+    const correctOption = q.options.find((item) => item.correct);
+    const info = answered
+      ? `<div class="answer-info ${answered.isCorrect ? "good" : "bad"}"><b>${answered.isCorrect ? "To‘g‘ri javob tanlandi." : "Noto‘g‘ri javob tanlandi."}</b><br>To‘g‘ri javob: ${escapeHtml(correctOption?.text || "")}${q.explanation ? `<br><br><b>Izoh / manba:</b> ${escapeHtml(q.explanation)}` : ""}</div>`
+      : `<div class="answer-info wait">Javobni belgilang. Javob belgilanmaguncha keyingi savolga o‘tib bo‘lmaydi.</div>`;
+
+    app.innerHTML = `
+      <section class="ranked-card">
+        <div class="quiz-header">
+          <div>
+            <span class="mini-label">${escapeHtml(q.categoryTitle)}</span>
+            <h2>${currentIndex + 1}/${quiz.length}-savol</h2>
+          </div>
+          <div id="quizTimer" class="quiz-timer">${formatTime(Math.floor((Date.now() - startedAt.getTime()) / 1000))}</div>
+        </div>
+        <div class="progress large"><span style="width:${progress}%"></span></div>
+        <div class="quiz-question">${escapeHtml(q.question)}</div>
+        <div class="ranked-option-list">${optionsHtml}</div>
+        ${info}
+        <div class="ranked-actions">
+          <button id="nextRankedQuestion" class="primary" type="button" ${answered ? "" : "disabled"}>${currentIndex === quiz.length - 1 ? "Tugatish" : "Keyingi savol"}</button>
+          <button id="cancelRankedTest" class="secondary" type="button">Testdan chiqish</button>
+        </div>
+      </section>
+    `;
+    document.querySelectorAll(".ranked-option").forEach((button) => {
+      button.addEventListener("click", () => selectAnswer(Number(button.dataset.option)));
+    });
+    document.getElementById("nextRankedQuestion")?.addEventListener("click", nextQuestion);
+    document.getElementById("cancelRankedTest")?.addEventListener("click", () => {
+      if (confirm("Testdan chiqasizmi? Natija reytingga yozilmaydi.")) {
+        stopTimer();
+        renderDashboard();
+      }
+    });
+  }
+
+  function selectAnswer(index) {
+    if (answers[currentIndex]) return;
+    const q = quiz[currentIndex];
+    const selected = q.options[index];
+    answers[currentIndex] = {
+      selectedIndex: index,
+      isCorrect: Boolean(selected?.correct)
+    };
+    renderQuestion();
+    window.setTimeout(() => {
+      document.getElementById("nextRankedQuestion")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  }
+
+  function nextQuestion() {
+    if (!answers[currentIndex]) {
+      alert("Avval javobni belgilang.");
+      return;
+    }
+    if (currentIndex < quiz.length - 1) {
+      currentIndex += 1;
+      renderQuestion();
+      scrollToAppTop();
+      return;
+    }
+    finishQuiz();
+  }
+
+  async function finishQuiz() {
+    stopTimer();
+    const finishedAt = new Date();
+    const correct = answers.filter((item) => item?.isCorrect).length;
+    const total = quiz.length;
+    const percent = total ? Math.round((correct / total) * 100) : 0;
+    const durationSeconds = Math.max(1, Math.floor((finishedAt.getTime() - startedAt.getTime()) / 1000));
+    const attempt = {
+      id: uid(),
+      profileId: profile.id,
+      phone: profile.phone,
+      fullName: profile.fullName,
+      company: profile.company,
+      department: profile.department,
+      position: profile.position,
+      total,
+      correct,
+      percent,
+      durationSeconds,
+      startedAt: startedAt.toISOString(),
+      finishedAt: finishedAt.toISOString(),
+      source: isSupabaseReady() ? "supabase" : "local"
+    };
+
+    attempts = [attempt, ...attempts];
+    saveLocalAttempts(attempts);
+    let saveMessage = "Natija ushbu qurilma xotirasiga saqlandi.";
+    if (isSupabaseReady()) {
+      try {
+        await dbSaveAttempt(attempt);
+        attempts = await dbLoadAttempts();
+        saveLocalAttempts(attempts);
+        saveMessage = "Natija umumiy Supabase reyting bazasiga saqlandi.";
+      } catch (error) {
+        saveMessage = `Supabasega yozishda xatolik: ${escapeHtml(error.message || "noma’lum xatolik")}. Natija vaqtincha localStorage’da saqlandi.`;
+      }
+    }
+
+    const rank = currentRank();
+    app.innerHTML = `
+      <section class="ranked-card result-card">
+        <span class="mini-label">Test yakunlandi</span>
+        <h2>${percent}%</h2>
+        <p>${correct}/${total} ta javob to‘g‘ri. Sarflangan vaqt: <b>${formatTime(durationSeconds)}</b>.</p>
+        <div class="ranked-note">${saveMessage}</div>
+        <div class="stats-grid">
+          <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Joriy o‘rin</span></div>
+          <div class="stat-box"><strong>${percent}%</strong><span>Natija</span></div>
+          <div class="stat-box"><strong>${formatTime(durationSeconds)}</strong><span>Vaqt</span></div>
+          <div class="stat-box"><strong>${formatDate(finishedAt)}</strong><span>Sana</span></div>
+        </div>
+        <div class="ranked-actions center">
+          <button id="backDashboard" class="primary" type="button">Profil va reytingga qaytish</button>
+          <button id="restartRanked" class="secondary" type="button">Qayta ishlash</button>
+        </div>
+      </section>
+      ${renderLeaderboard()}
+    `;
+    document.getElementById("backDashboard")?.addEventListener("click", renderDashboard);
+    document.getElementById("restartRanked")?.addEventListener("click", startQuiz);
+    scrollToAppTop();
+  }
+
+  function scrollToAppTop() {
+    window.setTimeout(() => app.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+
+  async function init() {
+    profile = loadLocalProfile();
+    attempts = loadLocalAttempts();
+    if (isSupabaseReady()) {
+      try {
+        attempts = await dbLoadAttempts();
+        saveLocalAttempts(attempts);
+        if (profile?.phone) {
+          const existing = await dbGetProfileByPhone(profile.phone);
+          if (existing) {
+            profile = dbProfileToLocal(existing);
+            saveLocalProfile(profile);
+          }
+        }
+      } catch (error) {
+        console.warn("Supabase yuklash xatosi:", error);
+      }
+    }
+    if (profile && localStorage.getItem(ACTIVE_SESSION_KEY)) renderDashboard();
+    else renderProfileForm();
+  }
+
+  init();
+})();
