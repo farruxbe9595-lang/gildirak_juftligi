@@ -4,6 +4,7 @@
   const PROFILE_KEY = "gj_ranked_profile_v1";
   const ATTEMPTS_KEY = "gj_ranked_attempts_v1";
   const ACTIVE_SESSION_KEY = "gj_ranked_active_session_v1";
+  const MAX_WRONG_ANSWERS = 3;
 
   const app = document.getElementById("rankedApp");
   const categories = Array.isArray(window.CATEGORY_TESTS) ? window.CATEGORY_TESTS : [];
@@ -482,83 +483,80 @@
   function renderLoginCreateView(message = "") {
     const remembered = loadLocalProfile();
     return `
-      <div class="auth-split">
-        <section class="ranked-card auth-card login-card">
-          <div class="auth-card-head">
-            <span class="auth-icon">🔐</span>
-            <div>
-              <span class="mini-label">Oldin ro‘yxatdan o‘tganlar</span>
-              <h2>Kirish</h2>
-              <p>Telefon raqam va o‘zingiz qo‘ygan 4 xonali PIN bilan profilga kiring. +998 yozmasangiz ham bo‘ladi: 941085696 ko‘rinishida yozsangiz avtomatik +998 qo‘shiladi.</p>
-            </div>
+      <section class="ranked-card auth-card unified-auth-card">
+        <div class="auth-card-head compact-auth-head">
+          <span class="auth-icon">👤</span>
+          <div>
+            <span class="mini-label">Profil</span>
+            <h2>Yangi profil yoki kirish</h2>
+            <p>Yangi xodim avval profil yaratadi. Oldin ro‘yxatdan o‘tgan xodim pastdan telefon raqam va PIN bilan kiradi.</p>
           </div>
-          ${remembered?.phone ? `<div class="ranked-note compact-note">Bu qurilmada oxirgi profil: <b>${escapeHtml(remembered.fullName || remembered.phone)}</b></div>` : ""}
-          <form id="loginForm" class="auth-form">
-            <div class="ranked-grid one-line-grid">
-              <div class="ranked-field">
-                <label for="loginPhone">Telefon raqam</label>
-                <input id="loginPhone" name="phone" value="${escapeHtml(remembered?.phone || "")}" placeholder="941085696 yoki +998941085696" inputmode="tel" autocomplete="tel" required />
-              </div>
-              <div class="ranked-field">
-                <label for="loginPin">4 xonali PIN</label>
-                <input id="loginPin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="2580" autocomplete="current-password" required />
-              </div>
-            </div>
-            <div class="ranked-actions auth-actions">
-              <button class="primary auth-main-btn" type="submit">Profilga kirish</button>
-            </div>
-          </form>
-        </section>
+        </div>
+        ${message ? `<div class="ranked-note compact-note">${escapeHtml(message)}</div>` : ""}
 
-        <section class="ranked-card auth-card create-card">
-          <div class="auth-card-head">
-            <span class="auth-icon">➕</span>
-            <div>
-              <span class="mini-label">Birinchi marta kirayotganlar</span>
-              <h2>Yangi profil yaratish</h2>
-              <p>Faqat birinchi marta to‘ldiriladi. Telefon raqamni 941085696 yoki +998941085696 ko‘rinishida yozish mumkin.</p>
+        <div class="auth-section-title">
+          <span class="auth-step">1</span>
+          <div>
+            <h3>Yangi profil ma’lumotlarini kiriting</h3>
+            <p>Birinchi marta kirayotgan xodim uchun.</p>
+          </div>
+        </div>
+        <form id="profileForm" class="auth-form compact-create-form">
+          <div class="ranked-grid compact-profile-grid">
+            <div class="ranked-field">
+              <label for="fullName">Ism-familiya</label>
+              <input id="fullName" name="fullName" placeholder="Masalan: Aliyev Alisher" autocomplete="name" required />
+            </div>
+            <div class="ranked-field">
+              <label for="company">Korxona</label>
+              <input id="company" name="company" placeholder="Masalan: VCHD-5" required />
+            </div>
+            <div class="ranked-field">
+              <label for="department">Uchastka / bo‘lim</label>
+              <input id="department" name="department" placeholder="Masalan: Tex otдел" required />
+            </div>
+            <div class="ranked-field">
+              <label for="position">Lavozim</label>
+              <input id="position" name="position" placeholder="Masalan: usta, brigadir" required />
+            </div>
+            <div class="ranked-field">
+              <label for="phone">Telefon raqam</label>
+              <input id="phone" name="phone" placeholder="941085696 yoki +998941085696" inputmode="tel" autocomplete="tel" required />
+            </div>
+            <div class="ranked-field">
+              <label for="pin">4 xonali PIN</label>
+              <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="2580" autocomplete="new-password" required />
+            </div>
+            <div class="ranked-field avatar-compact-field">
+              <label for="avatar">Profil rasmi</label>
+              <input id="avatar" name="avatar" type="file" accept="image/*" />
             </div>
           </div>
-          <details class="create-details">
-            <summary>Yangi profil ma’lumotlarini to‘ldirish</summary>
-            <form id="profileForm" class="auth-form create-form">
-              <div class="ranked-grid">
-                <div class="ranked-field">
-                  <label for="fullName">Ism-familiya</label>
-                  <input id="fullName" name="fullName" placeholder="Masalan: Aliyev Alisher" autocomplete="name" required />
-                </div>
-                <div class="ranked-field">
-                  <label for="company">Korxona</label>
-                  <input id="company" name="company" placeholder="Masalan: Andijon vagon deposi" required />
-                </div>
-                <div class="ranked-field">
-                  <label for="department">Uchastka / bo‘lim</label>
-                  <input id="department" name="department" placeholder="Masalan: g‘ildirak juftligi sexi" required />
-                </div>
-                <div class="ranked-field">
-                  <label for="position">Lavozim</label>
-                  <input id="position" name="position" placeholder="Masalan: chilangar, usta, brigadir" required />
-                </div>
-                <div class="ranked-field">
-                  <label for="phone">Telefon raqam</label>
-                  <input id="phone" name="phone" placeholder="941085696 yoki +998941085696" inputmode="tel" autocomplete="tel" required />
-                </div>
-                <div class="ranked-field">
-                  <label for="pin">4 xonali PIN</label>
-                  <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="Masalan: 2580" autocomplete="new-password" required />
-                </div>
-                <div class="ranked-field full-field">
-                  <label for="avatar">Profil rasmi</label>
-                  <input id="avatar" name="avatar" type="file" accept="image/*" />
-                </div>
-              </div>
-              <div class="ranked-actions auth-actions">
-                <button class="primary auth-main-btn" type="submit">Yangi profil yaratish</button>
-              </div>
-            </form>
-          </details>
-        </section>
-      </div>
+          <div class="ranked-actions auth-actions compact-auth-actions">
+            <button class="primary auth-main-btn" type="submit">Yangi profil yaratish</button>
+          </div>
+        </form>
+
+        <div class="auth-divider"><span>Oldin ro‘yxatdan o‘tgan bo‘lsangiz</span></div>
+
+        <form id="loginForm" class="auth-form compact-login-form">
+          ${remembered?.phone ? `<div class="ranked-note compact-note">Bu qurilmada oxirgi profil: <b>${escapeHtml(remembered.fullName || remembered.phone)}</b></div>` : ""}
+          <div class="ranked-grid one-line-grid compact-login-grid">
+            <div class="ranked-field">
+              <label for="loginPhone">Telefon raqam</label>
+              <input id="loginPhone" name="phone" value="${escapeHtml(remembered?.phone || "")}" placeholder="941085696" inputmode="tel" autocomplete="tel" required />
+            </div>
+            <div class="ranked-field">
+              <label for="loginPin">4 xonali PIN</label>
+              <input id="loginPin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="2580" autocomplete="current-password" required />
+            </div>
+            <div class="ranked-field login-submit-field">
+              <label>&nbsp;</label>
+              <button class="secondary auth-secondary-btn login-inline-btn" type="submit">Profilga kirish</button>
+            </div>
+          </div>
+        </form>
+      </section>
     `;
   }
 
@@ -621,14 +619,8 @@
       <div class="ranked-dashboard-layout">
         <div class="ranked-main-column">
           ${mode === "edit" ? renderEditProfileView(message) : `
-            <section class="ranked-card auth-intro-card">
-              <span class="mini-label">Profilga kirish</span>
-              <h2>Kirish yoki profil yaratish</h2>
-              <p>Oldin ro‘yxatdan o‘tgan xodim boshqa telefon yoki kompyuterdan kirganda barcha ma’lumotlarni qayta to‘ldirmaydi. Faqat telefon raqam va 4 xonali PIN yozib profiliga kiradi.</p>
-              ${localModeNotice()}
-              ${message ? `<div class="ranked-note">${escapeHtml(message)}</div>` : ""}
-            </section>
-            ${renderLoginCreateView()}
+            ${localModeNotice()}
+            ${renderLoginCreateView(message)}
           `}
         </div>
         <aside class="leaderboard-sidebar">
@@ -881,10 +873,16 @@
     timerId = null;
   }
 
+  function wrongCount() {
+    return answers.filter((item) => item && !item.isCorrect).length;
+  }
+
   function renderQuestion() {
     const q = quiz[currentIndex];
     const answered = answers[currentIndex];
+    const currentWrongCount = wrongCount();
     const isWrongAnswer = Boolean(answered && !answered.isCorrect);
+    const isWrongLimitReached = currentWrongCount >= MAX_WRONG_ANSWERS;
     const progress = Math.round((currentIndex / quiz.length) * 100);
     const optionsHtml = q.options.map((option, index) => {
       let cls = "ranked-option";
@@ -896,8 +894,8 @@
     }).join("");
     const correctOption = q.options.find((item) => item.correct);
     const info = answered
-      ? `<div class="answer-info ${answered.isCorrect ? "good" : "bad"}"><b>${answered.isCorrect ? "To‘g‘ri javob tanlandi." : "Noto‘g‘ri javob belgilandi. Test avtomatik yakunlanadi."}</b><br>To‘g‘ri javob: ${escapeHtml(correctOption?.text || "")}${q.explanation ? `<br><br><b>Izoh / manba:</b> ${escapeHtml(q.explanation)}` : ""}</div>`
-      : `<div class="answer-info wait">Javobni belgilang. Reytingli umumiy testda bitta noto‘g‘ri javob tanlansa, test darhol yakunlanadi va natija saqlanadi.</div>`;
+      ? `<div class="answer-info ${answered.isCorrect ? "good" : "bad"}"><b>${answered.isCorrect ? "To‘g‘ri javob tanlandi." : (isWrongLimitReached ? "3 ta xato to‘ldi. Test avtomatik yakunlanadi." : `Noto‘g‘ri javob belgilandi. Xatolar: ${currentWrongCount}/${MAX_WRONG_ANSWERS}`)}</b><br>To‘g‘ri javob: ${escapeHtml(correctOption?.text || "")}${q.explanation ? `<br><br><b>Izoh / manba:</b> ${escapeHtml(q.explanation)}` : ""}</div>`
+      : `<div class="answer-info wait">Javobni belgilang. Reytingli umumiy testda 3 ta noto‘g‘ri javob bo‘lsa, test yakunlanadi va natija saqlanadi.</div>`;
 
     app.innerHTML = `
       <section class="ranked-card quiz-card">
@@ -913,8 +911,8 @@
         <div class="ranked-option-list">${optionsHtml}</div>
         ${info}
         <div class="ranked-actions quiz-actions">
-          <button id="nextRankedQuestion" class="primary" type="button" ${answered && !isWrongAnswer ? "" : "disabled"}>${isWrongAnswer ? "Natija saqlanmoqda..." : (currentIndex === quiz.length - 1 ? "Testni yakunlash" : "Keyingi savol →")}</button>
-          <button id="cancelRankedTest" class="secondary" type="button" ${isWrongAnswer ? "disabled" : ""}>Testdan chiqish</button>
+          <button id="nextRankedQuestion" class="primary" type="button" ${answered && !isWrongLimitReached ? "" : "disabled"}>${isWrongLimitReached ? "Natija saqlanmoqda..." : (currentIndex === quiz.length - 1 ? "Testni yakunlash" : "Keyingi savol →")}</button>
+          <button id="cancelRankedTest" class="secondary" type="button" ${isWrongLimitReached ? "disabled" : ""}>Testdan chiqish</button>
         </div>
       </section>
     `;
@@ -951,9 +949,9 @@
     renderQuestion();
     scrollToAnswerActions();
 
-    if (!isCorrect) {
+    if (!isCorrect && wrongCount() >= MAX_WRONG_ANSWERS) {
       finishInProgress = true;
-      window.setTimeout(() => finishQuiz("wrong-answer"), 1200);
+      window.setTimeout(() => finishQuiz("wrong-limit"), 1200);
       return;
     }
 
@@ -976,7 +974,7 @@
 
   async function finishQuiz(reason = "completed") {
     setPageMode("result");
-    if (finishInProgress && reason !== "wrong-answer") return;
+    if (finishInProgress && reason !== "wrong-limit") return;
     finishInProgress = true;
     stopTimer();
     const finishedAt = new Date();
@@ -1037,7 +1035,7 @@
         <span class="mini-label">Test yakunlandi</span>
         <h2>${correct} ta</h2>
         <p>Jami ${total} ta savoldan <b>${correct} ta</b> javob to‘g‘ri. Sarflangan vaqt: <b>${formatTime(durationSeconds)}</b>.</p>
-        ${reason === "wrong-answer" ? `<div class="ranked-warning"><b>Test avtomatik yakunlandi:</b> bitta noto‘g‘ri javob belgilandi va natija saqlandi.</div>` : ""}
+        ${reason === "wrong-limit" ? `<div class="ranked-warning"><b>Test avtomatik yakunlandi:</b> 3 ta noto‘g‘ri javob belgilandi va natija saqlandi.</div>` : ""}
         <div class="ranked-note">${saveMessage}</div>
         <div class="stats-grid">
           <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Joriy o‘rin</span></div>

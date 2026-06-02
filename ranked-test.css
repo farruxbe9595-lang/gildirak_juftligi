@@ -970,3 +970,184 @@ html[data-theme="dark"] .ranked-actions .danger {
     width: 100%;
   }
 }
+
+/* =========================
+   2026-06 V11 — IXCHAM YANGI PROFIL + KIRISH, 3 XATO LIMIT
+   ========================= */
+.unified-auth-card {
+  padding: 18px 20px !important;
+  margin-top: 0 !important;
+  border-left: 6px solid var(--ranked-primary);
+}
+.compact-auth-head {
+  align-items: center !important;
+  margin-bottom: 12px !important;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(15, 95, 157, .12);
+}
+.compact-auth-head .auth-icon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 14px !important;
+  font-size: 20px !important;
+}
+.compact-auth-head h2 {
+  margin: 3px 0 4px !important;
+  font-size: clamp(22px, 2.4vw, 30px) !important;
+  line-height: 1.15 !important;
+}
+.compact-auth-head p {
+  margin: 0 !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  color: var(--ranked-muted);
+}
+.auth-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 10px;
+}
+.auth-section-title .auth-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--ranked-primary), var(--ranked-primary-2));
+  color: #fff;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, .20);
+}
+.auth-section-title h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.15;
+  color: var(--ranked-text);
+}
+.auth-section-title p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ranked-muted);
+}
+.compact-profile-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px 12px !important;
+}
+.compact-profile-grid .ranked-field label,
+.compact-login-grid .ranked-field label {
+  margin-bottom: 5px !important;
+  font-size: 13px !important;
+}
+.compact-profile-grid .ranked-field input,
+.compact-login-grid .ranked-field input {
+  min-height: 42px !important;
+  padding: 9px 12px !important;
+  border-radius: 13px !important;
+  font-size: 14px !important;
+}
+.avatar-compact-field {
+  grid-column: 1 / -1;
+}
+.avatar-compact-field input {
+  min-height: 40px !important;
+}
+.compact-auth-actions {
+  margin-top: 10px !important;
+}
+.compact-auth-actions .auth-main-btn {
+  min-height: 44px !important;
+  border-radius: 14px !important;
+  padding: 0 18px !important;
+  font-size: 15px !important;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 12px;
+  color: var(--ranked-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: rgba(15, 95, 157, .16);
+}
+.auth-divider span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef7ff;
+  border: 1px solid #cfe8ff;
+  color: var(--ranked-primary);
+}
+.compact-login-form {
+  padding: 12px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f8fcff, #eef7ff);
+  border: 1px solid rgba(15, 95, 157, .12);
+}
+.compact-login-grid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(120px, .7fr) auto !important;
+  gap: 10px !important;
+  align-items: end;
+}
+.login-submit-field label {
+  display: block;
+}
+.login-inline-btn {
+  min-height: 42px !important;
+  white-space: nowrap;
+  border-radius: 14px !important;
+  padding: 0 16px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+}
+html[data-theme="dark"] .compact-login-form {
+  background: #13243b;
+  border-color: #284461;
+}
+html[data-theme="dark"] .auth-divider span {
+  background: #13243b;
+  border-color: #284461;
+  color: #9fd0ff;
+}
+@media (max-width: 980px) {
+  .compact-login-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .login-submit-field {
+    grid-column: 1 / -1;
+  }
+  .login-inline-btn {
+    width: 100%;
+  }
+}
+@media (max-width: 680px) {
+  .unified-auth-card {
+    padding: 16px !important;
+  }
+  .compact-auth-head {
+    gap: 10px !important;
+  }
+  .compact-auth-head h2 {
+    font-size: 24px !important;
+  }
+  .compact-auth-head p {
+    display: none;
+  }
+  .compact-profile-grid,
+  .compact-login-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .auth-section-title p {
+    display: none;
+  }
+  .compact-auth-actions .auth-main-btn,
+  .login-inline-btn {
+    width: 100%;
+  }
+}
