@@ -405,65 +405,176 @@
     document.body.classList.toggle("ranked-result-active", mode === "result");
   }
 
-  function renderProfileForm(mode = "create", message = "") {
-    setPageMode("profile");
-    const p = profile || {};
-    app.innerHTML = `
-      <div class="ranked-dashboard-layout">
-        <div class="ranked-main-column">
-          <section class="ranked-card">
-            <h2>${mode === "edit" ? "Profilni tahrirlash" : "Reytingli testga kirish"}</h2>
-            <p>Bir xodim telefon va kompyuterdan kirganda ham bitta profil bo‘lishi uchun telefon raqam va 4 xonali PIN ishlatiladi.</p>
-            ${localModeNotice()}
-            ${message ? `<div class="ranked-note">${escapeHtml(message)}</div>` : ""}
-            <form id="profileForm">
+  function validatePin(pin, required = true) {
+    const value = String(pin || "").trim();
+    if (!value && !required) return "";
+    if (!/^\d{4}$/.test(value)) throw new Error("PIN aniq 4 ta raqamdan iborat bo‘lishi kerak.");
+    return value;
+  }
+
+  function renderLoginCreateView(message = "") {
+    const remembered = loadLocalProfile();
+    return `
+      <div class="auth-split">
+        <section class="ranked-card auth-card login-card">
+          <div class="auth-card-head">
+            <span class="auth-icon">🔐</span>
+            <div>
+              <span class="mini-label">Oldin ro‘yxatdan o‘tganlar</span>
+              <h2>Kirish</h2>
+              <p>Telefon raqam va o‘zingiz qo‘ygan 4 xonali PIN bilan profilga kiring. Telefon yoki kompyuter almashsa ham shu profil ochiladi.</p>
+            </div>
+          </div>
+          ${remembered?.phone ? `<div class="ranked-note compact-note">Bu qurilmada oxirgi profil: <b>${escapeHtml(remembered.fullName || remembered.phone)}</b></div>` : ""}
+          <form id="loginForm" class="auth-form">
+            <div class="ranked-grid one-line-grid">
+              <div class="ranked-field">
+                <label for="loginPhone">Telefon raqam</label>
+                <input id="loginPhone" name="phone" value="${escapeHtml(remembered?.phone || "")}" placeholder="+998901234567" autocomplete="tel" required />
+              </div>
+              <div class="ranked-field">
+                <label for="loginPin">4 xonali PIN</label>
+                <input id="loginPin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="2580" autocomplete="current-password" required />
+              </div>
+            </div>
+            <div class="ranked-actions auth-actions">
+              <button class="primary auth-main-btn" type="submit">Profilga kirish</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="ranked-card auth-card create-card">
+          <div class="auth-card-head">
+            <span class="auth-icon">➕</span>
+            <div>
+              <span class="mini-label">Birinchi marta kirayotganlar</span>
+              <h2>Yangi profil yaratish</h2>
+              <p>Faqat birinchi marta to‘ldiriladi. Keyingi safar faqat telefon raqam va PIN bilan kirasiz.</p>
+            </div>
+          </div>
+          <details class="create-details">
+            <summary>Yangi profil ma’lumotlarini to‘ldirish</summary>
+            <form id="profileForm" class="auth-form create-form">
               <div class="ranked-grid">
                 <div class="ranked-field">
                   <label for="fullName">Ism-familiya</label>
-                  <input id="fullName" name="fullName" value="${escapeHtml(p.fullName || "")}" placeholder="Masalan: Aliyev Alisher" required />
+                  <input id="fullName" name="fullName" placeholder="Masalan: Aliyev Alisher" autocomplete="name" required />
                 </div>
                 <div class="ranked-field">
                   <label for="company">Korxona</label>
-                  <input id="company" name="company" value="${escapeHtml(p.company || "")}" placeholder="Masalan: Andijon vagon deposi" required />
+                  <input id="company" name="company" placeholder="Masalan: Andijon vagon deposi" required />
                 </div>
                 <div class="ranked-field">
                   <label for="department">Uchastka / bo‘lim</label>
-                  <input id="department" name="department" value="${escapeHtml(p.department || "")}" placeholder="Masalan: g‘ildirak juftligi sexi" required />
+                  <input id="department" name="department" placeholder="Masalan: g‘ildirak juftligi sexi" required />
                 </div>
                 <div class="ranked-field">
                   <label for="position">Lavozim</label>
-                  <input id="position" name="position" value="${escapeHtml(p.position || "")}" placeholder="Masalan: chilangar, usta, brigadir" required />
+                  <input id="position" name="position" placeholder="Masalan: chilangar, usta, brigadir" required />
                 </div>
                 <div class="ranked-field">
                   <label for="phone">Telefon raqam</label>
-                  <input id="phone" name="phone" value="${escapeHtml(p.phone || "")}" placeholder="+998901234567" required />
+                  <input id="phone" name="phone" placeholder="+998901234567" autocomplete="tel" required />
                 </div>
                 <div class="ranked-field">
                   <label for="pin">4 xonali PIN</label>
-                  <input id="pin" name="pin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Masalan: 2580" ${mode === "edit" ? "" : "required"} />
+                  <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="Masalan: 2580" autocomplete="new-password" required />
                 </div>
-                <div class="ranked-field">
+                <div class="ranked-field full-field">
                   <label for="avatar">Profil rasmi</label>
                   <input id="avatar" name="avatar" type="file" accept="image/*" />
                 </div>
               </div>
-              <div class="ranked-actions">
-                <button class="primary" type="submit">${mode === "edit" ? "Saqlash" : "Kirish / profil yaratish"}</button>
-                ${mode === "edit" ? `<button id="cancelEdit" class="secondary" type="button">Bekor qilish</button>` : ""}
+              <div class="ranked-actions auth-actions">
+                <button class="primary auth-main-btn" type="submit">Yangi profil yaratish</button>
               </div>
             </form>
-          </section>
+          </details>
+        </section>
+      </div>
+    `;
+  }
+
+  function renderEditProfileView(message = "") {
+    const p = profile || {};
+    return `
+      <section class="ranked-card auth-card edit-card">
+        <div class="auth-card-head">
+          <span class="auth-icon">✏️</span>
+          <div>
+            <span class="mini-label">Profil ma’lumotlari</span>
+            <h2>Profilni tahrirlash</h2>
+            <p>Ma’lumotlaringizni yangilang. PIN maydonini bo‘sh qoldirsangiz, avvalgi PIN saqlanadi.</p>
+          </div>
+        </div>
+        ${message ? `<div class="ranked-note">${escapeHtml(message)}</div>` : ""}
+        <form id="profileForm" class="auth-form">
+          <div class="ranked-grid">
+            <div class="ranked-field">
+              <label for="fullName">Ism-familiya</label>
+              <input id="fullName" name="fullName" value="${escapeHtml(p.fullName || "")}" placeholder="Masalan: Aliyev Alisher" autocomplete="name" required />
+            </div>
+            <div class="ranked-field">
+              <label for="company">Korxona</label>
+              <input id="company" name="company" value="${escapeHtml(p.company || "")}" placeholder="Masalan: Andijon vagon deposi" required />
+            </div>
+            <div class="ranked-field">
+              <label for="department">Uchastka / bo‘lim</label>
+              <input id="department" name="department" value="${escapeHtml(p.department || "")}" placeholder="Masalan: g‘ildirak juftligi sexi" required />
+            </div>
+            <div class="ranked-field">
+              <label for="position">Lavozim</label>
+              <input id="position" name="position" value="${escapeHtml(p.position || "")}" placeholder="Masalan: chilangar, usta, brigadir" required />
+            </div>
+            <div class="ranked-field">
+              <label for="phone">Telefon raqam</label>
+              <input id="phone" name="phone" value="${escapeHtml(p.phone || "")}" placeholder="+998901234567" autocomplete="tel" required />
+            </div>
+            <div class="ranked-field">
+              <label for="pin">Yangi PIN</label>
+              <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="O‘zgarmasa bo‘sh qoldiring" autocomplete="new-password" />
+            </div>
+            <div class="ranked-field full-field">
+              <label for="avatar">Profil rasmi</label>
+              <input id="avatar" name="avatar" type="file" accept="image/*" />
+            </div>
+          </div>
+          <div class="ranked-actions auth-actions">
+            <button class="primary auth-main-btn" type="submit">Saqlash</button>
+            <button id="cancelEdit" class="secondary auth-secondary-btn" type="button">Bekor qilish</button>
+          </div>
+        </form>
+      </section>
+    `;
+  }
+
+  function renderProfileForm(mode = "create", message = "") {
+    setPageMode("profile");
+    app.innerHTML = `
+      <div class="ranked-dashboard-layout">
+        <div class="ranked-main-column">
+          ${mode === "edit" ? renderEditProfileView(message) : `
+            <section class="ranked-card auth-intro-card">
+              <span class="mini-label">Profilga kirish</span>
+              <h2>Kirish yoki profil yaratish</h2>
+              <p>Oldin ro‘yxatdan o‘tgan xodim boshqa telefon yoki kompyuterdan kirganda barcha ma’lumotlarni qayta to‘ldirmaydi. Faqat telefon raqam va 4 xonali PIN yozib profiliga kiradi.</p>
+              ${localModeNotice()}
+              ${message ? `<div class="ranked-note">${escapeHtml(message)}</div>` : ""}
+            </section>
+            ${renderLoginCreateView()}
+          `}
         </div>
         <aside class="leaderboard-sidebar">
           ${renderLeaderboard()}
         </aside>
       </div>
     `;
+    document.getElementById("loginForm")?.addEventListener("submit", submitLoginForm);
     document.getElementById("profileForm")?.addEventListener("submit", submitProfileForm);
     document.getElementById("cancelEdit")?.addEventListener("click", renderDashboard);
   }
 
-  async function submitProfileForm(event) {
+  async function submitLoginForm(event) {
     event.preventDefault();
     const form = event.currentTarget;
     const submitButton = form.querySelector("button[type='submit']");
@@ -472,15 +583,55 @@
     try {
       const formData = new FormData(form);
       const phone = normalizePhone(formData.get("phone"));
-      const pin = String(formData.get("pin") || "").trim();
-      const existingAvatar = profile?.avatarData || "";
+      const pin = validatePin(formData.get("pin"), true);
+      if (!phone) throw new Error("Telefon raqam kiriting.");
+      const computedPinHash = await pinHash(phone, pin);
+
+      if (isSupabaseReady()) {
+        const existing = await dbGetProfileByPhone(phone);
+        if (!existing) throw new Error("Bu telefon raqam bo‘yicha profil topilmadi. Avval yangi profil yarating.");
+        if (existing.pin_hash !== computedPinHash) throw new Error("PIN noto‘g‘ri kiritildi.");
+        profile = dbProfileToLocal(existing);
+        saveLocalProfile(profile);
+        attempts = await dbLoadAttempts();
+        renderDashboard();
+        return;
+      }
+
+      const local = loadLocalProfile();
+      if (!local || normalizePhone(local.phone) !== phone) {
+        throw new Error("Profil bu qurilmada topilmadi. Umumiy kirish uchun Supabase ulanishi kerak yoki avval shu qurilmada profil yarating.");
+      }
+      if (local.pinHash !== computedPinHash) throw new Error("PIN noto‘g‘ri kiritildi.");
+      profile = local;
+      attempts = loadLocalAttempts();
+      saveLocalProfile(profile);
+      renderDashboard();
+    } catch (error) {
+      renderProfileForm("create", error.message || "Kirishda xatolik yuz berdi.");
+    }
+  }
+
+  async function submitProfileForm(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submitButton = form.querySelector("button[type='submit']");
+    const isEdit = Boolean(profile && form.closest(".edit-card"));
+    submitButton.disabled = true;
+    submitButton.textContent = isEdit ? "Saqlanmoqda..." : "Yaratilmoqda...";
+    try {
+      const formData = new FormData(form);
+      const phone = normalizePhone(formData.get("phone"));
+      const rawPin = String(formData.get("pin") || "").trim();
+      const pin = validatePin(rawPin, !isEdit);
+      const existingAvatar = isEdit ? (profile?.avatarData || "") : "";
       const avatarFile = formData.get("avatar");
       const avatarData = avatarFile && avatarFile.size ? await readAvatar(avatarFile) : existingAvatar;
       const computedPinHash = pin ? await pinHash(phone, pin) : profile?.pinHash;
       if (!computedPinHash) throw new Error("PIN kiriting.");
 
       const nextProfile = {
-        id: profile?.id || uid(),
+        id: isEdit ? (profile?.id || uid()) : uid(),
         fullName: String(formData.get("fullName") || "").trim(),
         company: String(formData.get("company") || "").trim(),
         department: String(formData.get("department") || "").trim(),
@@ -497,23 +648,29 @@
 
       if (isSupabaseReady()) {
         const existing = await dbGetProfileByPhone(phone);
-        if (existing && existing.pin_hash && existing.pin_hash !== computedPinHash) {
-          throw new Error("Bu telefon raqam oldin ro‘yxatdan o‘tgan. PIN noto‘g‘ri kiritildi.");
+        if (!isEdit && existing?.id) {
+          throw new Error("Bu telefon raqam oldin ro‘yxatdan o‘tgan. Ma’lumotlarni qayta to‘ldirmasdan yuqoridagi ‘Kirish’ bo‘limidan telefon va PIN bilan kiring.");
         }
-        if (existing?.id) nextProfile.id = existing.id;
+        if (isEdit && existing?.id && existing.id !== profile?.id) {
+          throw new Error("Bu telefon raqam boshqa profilga biriktirilgan.");
+        }
+        if (isEdit) nextProfile.id = profile.id;
         profile = await dbSaveProfile(nextProfile);
         attempts = await dbLoadAttempts();
       } else {
         const local = loadLocalProfile();
-        if (local && normalizePhone(local.phone) === phone && local.pinHash && local.pinHash !== computedPinHash) {
-          throw new Error("Bu qurilmada ushbu telefon uchun boshqa PIN saqlangan.");
+        if (!isEdit && local && normalizePhone(local.phone) === phone) {
+          throw new Error("Bu qurilmada ushbu telefon uchun profil bor. Yuqoridagi ‘Kirish’ bo‘limidan telefon va PIN bilan kiring.");
+        }
+        if (isEdit && local && normalizePhone(local.phone) !== normalizePhone(profile?.phone) && normalizePhone(local.phone) === phone) {
+          throw new Error("Bu telefon boshqa profilga tegishli.");
         }
         profile = { ...nextProfile, synced: false };
       }
       saveLocalProfile(profile);
       renderDashboard();
     } catch (error) {
-      renderProfileForm(profile ? "edit" : "create", error.message || "Profilni saqlashda xatolik yuz berdi.");
+      renderProfileForm(isEdit ? "edit" : "create", error.message || "Profilni saqlashda xatolik yuz berdi.");
     }
   }
 

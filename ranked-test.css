@@ -753,3 +753,183 @@ body.ranked-result-active .public-leaderboard {
   body.ranked-quiz-active .ranked-option { font-size: 14px !important; }
   body.ranked-quiz-active .quiz-actions button { width: 100% !important; }
 }
+
+/* =========================
+   2026-06 V5 — ALOHIDA KIRISH / PROFIL YARATISH
+   ========================= */
+.auth-intro-card {
+  padding: 20px 22px !important;
+  margin-bottom: 16px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%);
+}
+.auth-intro-card h2 {
+  margin-bottom: 8px;
+  font-size: clamp(24px, 3vw, 34px);
+}
+.auth-intro-card p {
+  margin-bottom: 0;
+  max-width: 860px;
+}
+.auth-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.auth-card {
+  position: relative;
+  overflow: hidden;
+  padding: 22px !important;
+}
+.auth-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: linear-gradient(180deg, var(--ranked-primary), var(--ranked-primary-2));
+  opacity: .85;
+}
+.auth-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.auth-card-head h2 {
+  margin: 6px 0 8px;
+  font-size: clamp(23px, 3vw, 32px);
+}
+.auth-card-head p {
+  margin: 0;
+}
+.auth-icon {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #eef7ff;
+  border: 1px solid #cfe8ff;
+  font-size: 24px;
+}
+.auth-form {
+  position: relative;
+  z-index: 1;
+}
+.one-line-grid {
+  grid-template-columns: 1.2fr .8fr;
+}
+.full-field {
+  grid-column: 1 / -1;
+}
+.compact-note {
+  padding: 10px 12px !important;
+  margin: 0 0 14px !important;
+}
+.auth-actions {
+  margin-top: 18px !important;
+  gap: 10px;
+}
+.auth-main-btn,
+.auth-secondary-btn {
+  min-height: 50px;
+  padding: 0 22px !important;
+  border-radius: 16px !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+}
+.login-card {
+  border: 2px solid #b8ddff !important;
+  box-shadow: 0 18px 46px rgba(15, 95, 157, .12) !important;
+}
+.create-card {
+  background: #ffffff;
+}
+.create-details {
+  position: relative;
+  z-index: 1;
+}
+.create-details summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 16px;
+  background: #eef7ff;
+  border: 1px solid #cfe8ff;
+  color: var(--ranked-primary);
+  font-weight: 900;
+  user-select: none;
+}
+.create-details summary::-webkit-details-marker { display: none; }
+.create-details summary::after {
+  content: "↓";
+  margin-left: 10px;
+  font-weight: 900;
+}
+.create-details[open] summary::after { content: "↑"; }
+.create-form {
+  margin-top: 16px;
+}
+html[data-theme="dark"] .auth-intro-card,
+html[data-theme="dark"] .create-card {
+  background: #111c2f;
+}
+html[data-theme="dark"] .auth-icon,
+html[data-theme="dark"] .create-details summary {
+  background: #13243b;
+  border-color: #284461;
+  color: #9fd0ff;
+}
+html[data-theme="dark"] .login-card {
+  border-color: #31557a !important;
+}
+@media (max-width: 860px) {
+  .one-line-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-card-head {
+    align-items: center;
+  }
+}
+@media (max-width: 620px) {
+  .ranked-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .auth-intro-card,
+  .auth-card,
+  .ranked-card {
+    border-radius: 22px !important;
+  }
+  .auth-card {
+    padding: 18px !important;
+  }
+  .auth-card-head {
+    gap: 10px;
+  }
+  .auth-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    font-size: 21px;
+  }
+  .auth-main-btn,
+  .auth-secondary-btn,
+  .create-details summary {
+    width: 100%;
+  }
+  .ranked-field input,
+  .ranked-field select {
+    min-height: 50px;
+    padding: 12px 14px !important;
+    font-size: 16px !important;
+    border-radius: 16px !important;
+  }
+  .ranked-field label {
+    font-size: 15px;
+  }
+}
