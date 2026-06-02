@@ -933,3 +933,40 @@ html[data-theme="dark"] .login-card {
     font-size: 15px;
   }
 }
+
+
+/* 2026-06 V7 — profil sessiyasidan chiqish tugmasi */
+.profile-action-buttons {
+  margin-top: 0 !important;
+  justify-content: flex-end;
+  align-items: center;
+}
+.ranked-actions button.danger,
+.ranked-actions .danger {
+  background: #fff5f5 !important;
+  color: #b42318 !important;
+  border: 1px solid #ffd0d0 !important;
+  box-shadow: 0 10px 22px rgba(180, 35, 24, .08);
+}
+.ranked-actions button.danger:hover:not(:disabled),
+.ranked-actions .danger:hover {
+  box-shadow: 0 14px 28px rgba(180, 35, 24, .13);
+}
+html[data-theme="dark"] .ranked-actions button.danger,
+html[data-theme="dark"] .ranked-actions .danger {
+  background: #2a1518 !important;
+  color: #ffe0e0 !important;
+  border-color: #6b2b2b !important;
+}
+@media (max-width: 780px) {
+  .profile-action-buttons {
+    width: 100%;
+    justify-content: stretch;
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .profile-action-buttons button {
+    width: 100%;
+  }
+}

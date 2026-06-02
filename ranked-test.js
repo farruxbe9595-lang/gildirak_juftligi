@@ -99,6 +99,27 @@
     }
   }
 
+  function clearLocalSession() {
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(ACTIVE_SESSION_KEY);
+    profile = null;
+    quiz = [];
+    answers = [];
+    currentIndex = 0;
+    finishInProgress = false;
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  function logoutProfile() {
+    const ok = window.confirm("Profildan chiqasizmi? Reyting natijalari saqlanib qoladi, faqat shu qurilmadagi kirish sessiyasi tozalanadi.");
+    if (!ok) return;
+    clearLocalSession();
+    renderProfileForm("create", "Profildan chiqildi. Endi boshqa xodim telefon raqam va PIN bilan kirishi mumkin.");
+  }
+
   function saveLocalAttempts(list) {
     localStorage.setItem(ATTEMPTS_KEY, JSON.stringify(getBestAttempts(list)));
   }
@@ -731,8 +752,9 @@
                 <p class="profile-meta">${escapeHtml(profile.company)} · ${escapeHtml(profile.department)} · ${escapeHtml(profile.position)}</p>
                 <p class="profile-meta">Telefon: ${escapeHtml(profile.phone)}</p>
               </div>
-              <div class="ranked-actions">
+              <div class="ranked-actions profile-action-buttons">
                 <button id="editProfile" class="secondary" type="button">Profilni tahrirlash</button>
+                <button id="logoutProfile" class="danger" type="button">Profildan chiqish</button>
               </div>
             </div>
             ${localModeNotice()}
@@ -765,6 +787,7 @@
       </div>
     `;
     document.getElementById("editProfile")?.addEventListener("click", () => renderProfileForm("edit"));
+    document.getElementById("logoutProfile")?.addEventListener("click", logoutProfile);
     document.getElementById("startRankedTest")?.addEventListener("click", startQuiz);
   }
 
