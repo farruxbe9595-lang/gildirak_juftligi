@@ -1,0 +1,207 @@
+/* Main page: Testlar bo‘limi ikkita alohida kartochka */
+.tests-two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  margin: 0 0 26px;
+}
+
+.tests-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 18px;
+  row-gap: 18px;
+  min-height: 190px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid #cfe8ff;
+  background: linear-gradient(135deg, #ffffff 0%, #eef7ff 100%);
+  box-shadow: 0 16px 35px rgba(10, 35, 70, .09);
+  overflow: hidden;
+}
+
+.tests-panel::after {
+  content: "";
+  position: absolute;
+  right: -48px;
+  top: -58px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: rgba(30, 103, 166, .08);
+  pointer-events: none;
+}
+
+.tests-panel-ranked {
+  background: linear-gradient(135deg, #0f5f9d 0%, #2268e9 100%);
+  border-color: rgba(255, 255, 255, .28);
+  color: #ffffff;
+}
+
+.tests-panel-ranked::after {
+  background: rgba(255, 255, 255, .16);
+}
+
+.panel-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(10, 35, 70, .10);
+  font-size: 30px;
+  z-index: 1;
+}
+
+.tests-panel-ranked .panel-icon {
+  background: rgba(255, 255, 255, .18);
+  border: 1px solid rgba(255, 255, 255, .25);
+  box-shadow: none;
+}
+
+.panel-body {
+  z-index: 1;
+}
+
+.panel-badge {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #e6f3ff;
+  color: #0f5f9d;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.ranked-badge,
+.tests-panel-ranked .panel-badge {
+  background: rgba(255, 255, 255, .18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, .22);
+}
+
+.tests-panel h2 {
+  margin: 0 0 10px;
+  color: #102033;
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.15;
+}
+
+.tests-panel-ranked h2 {
+  color: #ffffff;
+}
+
+.tests-panel p {
+  margin: 0;
+  color: #405268;
+  line-height: 1.55;
+  font-size: 15px;
+}
+
+.tests-panel-ranked p {
+  color: rgba(255, 255, 255, .90);
+}
+
+.panel-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.panel-tags span {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(15, 95, 157, .08);
+  color: #0f5f9d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tests-panel-ranked .panel-tags span {
+  background: rgba(255, 255, 255, .15);
+  color: #ffffff;
+}
+
+.panel-btn {
+  grid-column: 1 / -1;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 14px;
+  text-decoration: none;
+  font-weight: 900;
+  letter-spacing: .01em;
+  transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+
+.panel-btn:hover {
+  transform: translateY(-2px);
+  opacity: .98;
+}
+
+.category-btn {
+  background: #0f5f9d;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 95, 157, .20);
+}
+
+.ranked-btn {
+  background: #ffffff;
+  color: #0f5f9d;
+  box-shadow: 0 14px 26px rgba(0, 0, 0, .14);
+}
+
+html[data-theme="dark"] .tests-panel-category {
+  background: linear-gradient(135deg, #111c2f 0%, #15243a 100%);
+  border-color: #243650;
+  color: #e6edf7;
+}
+
+html[data-theme="dark"] .tests-panel-category h2 {
+  color: #e6edf7;
+}
+
+html[data-theme="dark"] .tests-panel-category p {
+  color: #aabbd0;
+}
+
+html[data-theme="dark"] .panel-tags span {
+  background: rgba(113, 183, 255, .12);
+  color: #9fd0ff;
+}
+
+@media (max-width: 980px) {
+  .tests-two-column {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .tests-panel {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .panel-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    font-size: 26px;
+  }
+
+  .panel-btn {
+    width: 100%;
+  }
+}

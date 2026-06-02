@@ -1,127 +1,79 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uz">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>G‘ildirak juftligi va buksa uzellari | O‘quv-test platformasi</title>
-
-  <meta
-    name="description"
-    content="RD VNIIZHT 27.05.01-2017 asosida vagon deposi xodimlari uchun darslar, razryad bo‘yicha testlar va mustaqil tayyorgarlik platformasi."
-  />
-
-  <link rel="canonical" href="https://farruxbe9595-lang.github.io/gildirak_juftligi/" />
-
-  <!-- Telegram, Facebook va boshqa messenjerlar uchun preview -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="G‘ildirak juftligi" />
-  <meta property="og:title" content="G‘ildirak juftligi va buksa uzellari" />
-  <meta
-    property="og:description"
-    content="RD VNIIZHT 27.05.01-2017 asosida vagon deposi xodimlari uchun darslar, razryad bo‘yicha testlar va mustaqil tayyorgarlik platformasi."
-  />
-  <meta property="og:url" content="https://farruxbe9595-lang.github.io/gildirak_juftligi/" />
-
-  <meta
-    property="og:image"
-    content="https://farruxbe9595-lang.github.io/gildirak_juftligi/assets/g_ildirak_juftligi_va_buksa_uzellari.png?v=5"
-  />
-  <meta
-    property="og:image:secure_url"
-    content="https://farruxbe9595-lang.github.io/gildirak_juftligi/assets/g_ildirak_juftligi_va_buksa_uzellari.png?v=5"
-  />
-  <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:width" content="1448" />
-  <meta property="og:image:height" content="1086" />
-  <meta
-    property="og:image:alt"
-    content="G‘ildirak juftligi va buksa uzellari o‘quv-test platformasi"
-  />
-
-  <!-- Twitter / X preview -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="G‘ildirak juftligi va buksa uzellari" />
-  <meta
-    name="twitter:description"
-    content="RD VNIIZHT 27.05.01-2017 asosida vagon deposi xodimlari uchun darslar, razryad bo‘yicha testlar va mustaqil tayyorgarlik platformasi."
-  />
-  <meta
-    name="twitter:image"
-    content="https://farruxbe9595-lang.github.io/gildirak_juftligi/assets/g_ildirak_juftligi_va_buksa_uzellari.png?v=5"
-  />
-
-  <meta name="theme-color" content="#0f5f9f" />
-
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="category-tests.css" />
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="home-test-split.css">
 </head>
-
 <body>
   <header class="topbar">
-    <div>
+    <div class="topbar-main">
       <h1>G‘ildirak juftligi va buksa uzellari</h1>
       <p>РД ВНИИЖТ 27.05.01-2017 asosida 30 bo‘limli professional o‘quv-test platformasi</p>
-      <div class="test-badge">Sinov tarzda ishga tushirildi</div>
-
+      <span class="test-badge">Sinov tarzda ishga tushirildi</span>
       <div class="contact-box">
         <div class="contact-text">
-          <div>Murojaat uchun: Admin — VChD-5 IChTB boshlig‘i G‘aniyev F.B.</div>
+          <strong>Murojaat uchun: Admin — VChD-5 IChTB boshlig‘i G‘aniyev F.B.</strong>
           <div class="contact-links">
-            <a href="tel:+998941085696" class="contact-link">📞 +998 94 108 56 96</a>
-            <a
-              href="https://t.me/FARRUX3336"
-              target="_blank"
-              rel="noopener"
-              class="contact-link"
-            >
-              💬 Telegram: @FARRUX3336
-            </a>
+            <a class="contact-link" href="tel:+998941085696">📞 +998 94 108 56 96</a>
+            <a class="contact-link" href="https://t.me/FARRUX3336" target="_blank" rel="noopener">💬 Telegram: @FARRUX3336</a>
           </div>
         </div>
-
-        <a
-          href="https://t.me/FARRUX3336"
-          target="_blank"
-          rel="noopener"
-          class="qr-link"
-          title="Telegramga o‘tish"
-        >
-          <img
-            src="assets/telegram_qr.png"
-            alt="Telegram QR: @FARRUX3336"
-            class="telegram-qr"
-          />
+        <a class="qr-link" href="https://t.me/FARRUX3336" target="_blank" rel="noopener" aria-label="Telegram QR">
+          <img class="telegram-qr" src="assets/telegram_qr.png" alt="Telegram QR">
         </a>
       </div>
     </div>
-
     <div class="toolbar">
-      <select id="langSelect" aria-label="Til tanlash">
+      <select id="langSelect" aria-label="Tilni tanlash">
         <option value="uz">O‘zbek lotin</option>
         <option value="uzc">Ўзбек кирилл</option>
         <option value="ru">Русский</option>
       </select>
-
-      <button id="themeToggle" class="ghost" type="button">🌙 Tungi rejim</button>
-      <button id="resetProgress" class="ghost" type="button">Progressni tozalash</button>
+      <button class="ghost" id="themeToggle" type="button">🌙 Tungi rejim</button>
+      <button class="ghost" id="resetProgress" type="button">Progressni tozalash</button>
     </div>
   </header>
 
   <main class="container">
-    <section class="exam-entry" aria-label="Alohida testlar bo‘limi">
-      <div>
-        <span class="mini-label">Alohida test bo‘limi</span>
-        <h2>Testlar bo‘limi</h2>
-        <p>
-          Bu bo‘lim darslar progressiga tegmaydi. Xodim o‘z kategoriyasini tanlaydi,
-          test boshlanishidan oldin 20 ta, 30 ta yoki barcha savollarni belgilaydi.
-          Javob tanlanmaguncha keyingi savolga o‘tib bo‘lmaydi.
-        </p>
-      </div>
+    <section class="tests-two-column" aria-label="Testlar bo‘limi">
+      <article class="tests-panel tests-panel-category">
+        <div class="panel-icon">📚</div>
+        <div class="panel-body">
+          <span class="panel-badge">Toifa bo‘yicha testlar</span>
+          <h2>Toifa uchun testlar</h2>
+          <p>
+            Xodim o‘ziga kerakli toifani tanlaydi. Har bir toifa bo‘yicha testlar alohida ochiladi,
+            natijalar dars progressiga aralashmaydi.
+          </p>
+          <div class="panel-tags">
+            <span>Bo‘limlar bo‘yicha</span>
+            <span>20 / 30 / barcha savollar</span>
+            <span>Izohli javoblar</span>
+          </div>
+        </div>
+        <a class="panel-btn category-btn" href="category-tests.html">Toifa testlarini ochish</a>
+      </article>
 
-      <a class="btn exam-open-btn" href="category-tests.html">Testlarni ochish</a>
+      <article class="tests-panel tests-panel-ranked">
+        <div class="panel-icon">🏆</div>
+        <div class="panel-body">
+          <span class="panel-badge ranked-badge">Umumiy reytingli test</span>
+          <h2>Umumiy reytingli savollar</h2>
+          <p>
+            Testlar bazasidagi barcha savollar umumiy testga tushadi. Natija umumiy reytingda
+            ko‘rinadi va faqat eng yaxshi natija saqlanadi.
+          </p>
+          <div class="panel-tags">
+            <span>Hamma savollar</span>
+            <span>Reyting jadvali</span>
+            <span>Eng yaxshi natija</span>
+          </div>
+        </div>
+        <a class="panel-btn ranked-btn" href="ranked-test.html">Reytingli testni boshlash</a>
+      </article>
     </section>
 
     <section class="hero">
@@ -132,16 +84,14 @@
           Testdan o‘tish uchun kamida 75% natija tavsiya etiladi.
         </p>
       </div>
-
       <div class="stats" id="stats"></div>
     </section>
 
-    <section id="sectionGrid" class="grid"></section>
+    <section class="grid" id="sectionGrid"></section>
   </main>
 
   <script src="data/training-data.js"></script>
   <script src="app.js"></script>
   <script src="theme.js"></script>
 </body>
-
 </html>
