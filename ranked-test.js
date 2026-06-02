@@ -28,8 +28,39 @@
       .replaceAll("'", "&#039;");
   }
 
-  function normalizePhone(value) {
+  function legacyNormalizePhone(value) {
     return String(value || "").replace(/[^0-9+]/g, "").replace(/^00/, "+").trim();
+  }
+
+  function normalizePhone(value) {
+    const raw = legacyNormalizePhone(value);
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) return "";
+
+    // O‘zbekiston raqamlari uchun qulaylik:
+    // 941085696        -> +998941085696
+    // 0941085696       -> +998941085696
+    // 998941085696     -> +998941085696
+    // +998941085696    -> +998941085696
+    if (digits.length === 9) return `+998${digits}`;
+    if (digits.length === 10 && digits.startsWith("0")) return `+998${digits.slice(1)}`;
+    if (digits.length === 12 && digits.startsWith("998")) return `+${digits}`;
+    if (digits.length === 13 && digits.startsWith("998")) return `+${digits.slice(0, 12)}`;
+
+    return raw.startsWith("+") ? `+${digits}` : digits;
+  }
+
+  function phoneSearchVariants(value) {
+    const normalized = normalizePhone(value);
+    const legacy = legacyNormalizePhone(value);
+    const digits = legacy.replace(/\D/g, "");
+    const variants = [normalized, legacy, digits];
+    if (normalized.startsWith("+998")) {
+      variants.push(normalized.slice(4));
+      variants.push(`998${normalized.slice(4)}`);
+      variants.push(`0${normalized.slice(4)}`);
+    }
+    return [...new Set(variants.filter(Boolean))];
   }
 
   function uid() {
@@ -45,6 +76,13 @@
 
   async function pinHash(phone, pin) {
     return sha256(`${normalizePhone(phone)}|${String(pin || "").trim()}|gildirak_ranked_v1`);
+  }
+
+  async function pinHashVariants(phone, pin) {
+    const pinValue = String(pin || "").trim();
+    const variants = phoneSearchVariants(phone);
+    const hashes = await Promise.all(variants.map((item) => sha256(`${item}|${pinValue}|gildirak_ranked_v1`)));
+    return [...new Set(hashes)];
   }
 
   function saveLocalProfile(data) {
@@ -90,13 +128,14 @@
   async function dbGetProfileByPhone(phone) {
     const db = getSupabase();
     if (!db) return null;
+    const variants = phoneSearchVariants(phone);
     const { data, error } = await db
       .from(config.tables?.profiles || "ranked_profiles")
       .select("*")
-      .eq("phone", normalizePhone(phone))
-      .maybeSingle();
+      .in("phone", variants)
+      .limit(1);
     if (error) throw error;
-    return data;
+    return Array.isArray(data) && data.length ? data[0] : null;
   }
 
   async function dbSaveProfile(data) {
@@ -422,7 +461,7 @@
             <div>
               <span class="mini-label">Oldin ro‘yxatdan o‘tganlar</span>
               <h2>Kirish</h2>
-              <p>Telefon raqam va o‘zingiz qo‘ygan 4 xonali PIN bilan profilga kiring. Telefon yoki kompyuter almashsa ham shu profil ochiladi.</p>
+              <p>Telefon raqam va o‘zingiz qo‘ygan 4 xonali PIN bilan profilga kiring. +998 yozmasangiz ham bo‘ladi: 941085696 ko‘rinishida yozsangiz avtomatik +998 qo‘shiladi.</p>
             </div>
           </div>
           ${remembered?.phone ? `<div class="ranked-note compact-note">Bu qurilmada oxirgi profil: <b>${escapeHtml(remembered.fullName || remembered.phone)}</b></div>` : ""}
@@ -430,7 +469,7 @@
             <div class="ranked-grid one-line-grid">
               <div class="ranked-field">
                 <label for="loginPhone">Telefon raqam</label>
-                <input id="loginPhone" name="phone" value="${escapeHtml(remembered?.phone || "")}" placeholder="+998901234567" autocomplete="tel" required />
+                <input id="loginPhone" name="phone" value="${escapeHtml(remembered?.phone || "")}" placeholder="941085696 yoki +998941085696" inputmode="tel" autocomplete="tel" required />
               </div>
               <div class="ranked-field">
                 <label for="loginPin">4 xonali PIN</label>
@@ -449,7 +488,7 @@
             <div>
               <span class="mini-label">Birinchi marta kirayotganlar</span>
               <h2>Yangi profil yaratish</h2>
-              <p>Faqat birinchi marta to‘ldiriladi. Keyingi safar faqat telefon raqam va PIN bilan kirasiz.</p>
+              <p>Faqat birinchi marta to‘ldiriladi. Telefon raqamni 941085696 yoki +998941085696 ko‘rinishida yozish mumkin.</p>
             </div>
           </div>
           <details class="create-details">
@@ -474,7 +513,7 @@
                 </div>
                 <div class="ranked-field">
                   <label for="phone">Telefon raqam</label>
-                  <input id="phone" name="phone" placeholder="+998901234567" autocomplete="tel" required />
+                  <input id="phone" name="phone" placeholder="941085696 yoki +998941085696" inputmode="tel" autocomplete="tel" required />
                 </div>
                 <div class="ranked-field">
                   <label for="pin">4 xonali PIN</label>
@@ -528,7 +567,7 @@
             </div>
             <div class="ranked-field">
               <label for="phone">Telefon raqam</label>
-              <input id="phone" name="phone" value="${escapeHtml(p.phone || "")}" placeholder="+998901234567" autocomplete="tel" required />
+              <input id="phone" name="phone" value="${escapeHtml(p.phone || "")}" placeholder="941085696 yoki +998941085696" inputmode="tel" autocomplete="tel" required />
             </div>
             <div class="ranked-field">
               <label for="pin">Yangi PIN</label>
@@ -586,11 +625,12 @@
       const pin = validatePin(formData.get("pin"), true);
       if (!phone) throw new Error("Telefon raqam kiriting.");
       const computedPinHash = await pinHash(phone, pin);
+      const allowedPinHashes = await pinHashVariants(phone, pin);
 
       if (isSupabaseReady()) {
         const existing = await dbGetProfileByPhone(phone);
         if (!existing) throw new Error("Bu telefon raqam bo‘yicha profil topilmadi. Avval yangi profil yarating.");
-        if (existing.pin_hash !== computedPinHash) throw new Error("PIN noto‘g‘ri kiritildi.");
+        if (!allowedPinHashes.includes(existing.pin_hash)) throw new Error("PIN noto‘g‘ri kiritildi.");
         profile = dbProfileToLocal(existing);
         saveLocalProfile(profile);
         attempts = await dbLoadAttempts();
