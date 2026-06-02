@@ -9,7 +9,7 @@
 */
 window.SUPABASE_CONFIG = {
   enabled: true,
-  url: "//rrsmokgexkfablfufxpn.supabase.co",
+  url: "https://rrsmokgexkfablfufxpn.supabase.co",
   anonKey: "sb_publishable_jsWoViDSg46_lldPaAZ9bA_yLLmUrnx",
   tables: {
     profiles: "ranked_profiles",
