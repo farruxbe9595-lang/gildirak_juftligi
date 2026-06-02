@@ -375,7 +375,14 @@
         const options = Array.isArray(q.options) ? q.options.filter((x) => String(x || "").trim()) : [];
         const answer = Number(q.answer);
         if (!question || options.length < 2 || Number.isNaN(answer) || !options[answer]) return;
-        const key = `${question.toLowerCase()}__${options.join("|").toLowerCase()}`;
+        // Dublikatlarni javoblar tartibiga qarab emas, savol matni bo‘yicha tozalaymiz.
+        // Sabab: bir xil savol turli toifalarda variantlari boshqa tartibda berilgan bo‘lishi mumkin.
+        const key = question
+          .toLowerCase()
+          .replace(/[’‘`´]/g, "'")
+          .replace(/\s+/g, " ")
+          .replace(/[?？!！.。]+$/g, "")
+          .trim();
         if (seen.has(key)) return;
         seen.add(key);
         pool.push({

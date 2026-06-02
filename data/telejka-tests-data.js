@@ -1,10 +1,11 @@
-// Telejka bo‘yicha alohida test kategoriyasi.
-// Bu fayl mavjud data/category-tests-data.js dagi kategoriyalarga tegmaydi, faqat yangi 'telejka' kategoriyasini qo‘shadi.
+// Тележка бўйича изоҳли тестлар.
+// Бу файл data/category-tests-data.js дан кейин уланади ва мавжуд категорияларга тележка саволларини қўшади.
 (function () {
-  const TELEJKA_CATEGORY = {
+  window.CATEGORY_TESTS = Array.isArray(window.CATEGORY_TESTS) ? window.CATEGORY_TESTS : [];
+  const telejkaCategory = {
   "id": "telejka",
   "title": "Тележка тоифаси",
-  "source": "РД 32 ЦВ 052-2009, РД 32 ЦВ 050-2020, РД 32 ЦВ 067-2022, РД 32 ЦВ 082-2021 асосида тайёрланган изоҳли тест материаллари",
+  "source": "РД 32 ЦВ 052-2009, РД 32 ЦВ 050-2020, РД 32 ЦВ 067-2022, РД 32 ЦВ 082-2021 ва Telejka.xlsx асосидаги изоҳли тестлар",
   "count": 67,
   "questions": [
     {
@@ -880,12 +881,10 @@
     }
   ]
 };
-
-  window.CATEGORY_TESTS = Array.isArray(window.CATEGORY_TESTS) ? window.CATEGORY_TESTS : [];
-  const existingIndex = window.CATEGORY_TESTS.findIndex((item) => item.id === TELEJKA_CATEGORY.id);
+  const existingIndex = window.CATEGORY_TESTS.findIndex((item) => item && item.id === telejkaCategory.id);
   if (existingIndex >= 0) {
-    window.CATEGORY_TESTS[existingIndex] = TELEJKA_CATEGORY;
+    window.CATEGORY_TESTS[existingIndex] = telejkaCategory;
   } else {
-    window.CATEGORY_TESTS.push(TELEJKA_CATEGORY);
+    window.CATEGORY_TESTS.push(telejkaCategory);
   }
 })();
