@@ -515,3 +515,241 @@ html[data-theme="dark"] .ranked-actions button.secondary {
   color: #dcecff !important;
   border-color: #2c405c !important;
 }
+
+/* =========================
+   2026-06 V4 — EKRANGA MOS KOMPAKT REJIM + DONA BO'YICHA NATIJA
+   ========================= */
+.ranked-page {
+  max-width: 1120px;
+  padding-top: 10px !important;
+  padding-bottom: 18px !important;
+}
+.ranked-app { margin-top: 16px !important; }
+.ranked-page .back-link {
+  margin-bottom: 12px !important;
+  padding: 9px 13px !important;
+}
+.ranked-hero {
+  min-height: 118px !important;
+  padding: 22px 26px !important;
+  border-radius: 24px !important;
+}
+.ranked-hero h1 {
+  margin: 8px 0 8px !important;
+  font-size: clamp(28px, 4vw, 42px) !important;
+}
+.ranked-hero p {
+  font-size: 15px !important;
+  line-height: 1.35 !important;
+  max-width: 720px !important;
+}
+.ranked-hero::after {
+  font-size: 82px !important;
+  right: 28px !important;
+  bottom: 2px !important;
+}
+.ranked-card {
+  padding: 18px 20px !important;
+  border-radius: 22px !important;
+  margin-bottom: 16px !important;
+}
+.ranked-dashboard-layout {
+  grid-template-columns: minmax(0, 1.28fr) minmax(330px, .72fr) !important;
+  gap: 16px !important;
+}
+.leaderboard-sidebar { top: 10px !important; }
+.profile-head {
+  grid-template-columns: auto 1fr auto !important;
+  gap: 14px !important;
+  padding: 0 !important;
+}
+.avatar {
+  width: 70px !important;
+  height: 70px !important;
+  border-radius: 20px !important;
+  font-size: 24px !important;
+}
+.profile-name {
+  font-size: clamp(22px, 3vw, 30px) !important;
+  margin-bottom: 4px !important;
+}
+.profile-meta {
+  margin: 3px 0 0 !important;
+  line-height: 1.35 !important;
+}
+.stats-grid {
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+.stat-box {
+  min-height: 78px !important;
+  padding: 11px 12px !important;
+  border-radius: 16px !important;
+}
+.stat-box strong {
+  font-size: clamp(20px, 2.4vw, 27px) !important;
+}
+.stat-box span {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+.start-panel-strong {
+  grid-template-columns: 1fr auto !important;
+  padding: 20px !important;
+}
+.start-panel-strong h2 {
+  margin: 8px 0 8px !important;
+  font-size: clamp(24px, 3vw, 32px) !important;
+}
+.start-panel-strong p {
+  margin: 0 !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+.start-summary {
+  margin-top: 12px !important;
+  gap: 8px !important;
+}
+.start-summary b {
+  padding: 8px 12px !important;
+  font-size: 15px !important;
+}
+.start-summary span { font-size: 13px !important; }
+.start-button-big {
+  min-height: 56px !important;
+  min-width: 210px !important;
+  padding: 0 24px !important;
+  border-radius: 18px !important;
+  font-size: 17px !important;
+}
+.public-leaderboard { padding: 18px !important; }
+.public-leaderboard h2 {
+  font-size: clamp(20px, 2.4vw, 26px) !important;
+}
+.leaderboard-help {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+.leaderboard-scroll {
+  max-height: 410px !important;
+}
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 10px 9px !important;
+  font-size: 13px;
+}
+.leaderboard-table td:nth-child(3) b {
+  font-size: 17px !important;
+}
+.leaderboard-name { font-size: 14px !important; }
+.leaderboard-sub { font-size: 12px !important; }
+
+/* Test yechish va natija oynasida yuqoridagi katta banner yashiriladi — savol ekranga sig'adi */
+body.ranked-quiz-active .ranked-page > .back-link,
+body.ranked-quiz-active .ranked-hero {
+  display: none !important;
+}
+body.ranked-quiz-active .ranked-page {
+  max-width: 1040px !important;
+  padding-top: 8px !important;
+}
+body.ranked-quiz-active .ranked-app {
+  margin-top: 0 !important;
+}
+body.ranked-quiz-active .quiz-card {
+  padding: 18px 20px !important;
+  border-radius: 22px !important;
+}
+body.ranked-quiz-active .quiz-header {
+  padding-bottom: 10px !important;
+  margin-bottom: 10px !important;
+}
+body.ranked-quiz-active .quiz-header h2 {
+  font-size: clamp(20px, 3vw, 28px) !important;
+  margin: 5px 0 0 !important;
+}
+body.ranked-quiz-active .quiz-timer {
+  min-width: 80px !important;
+  padding: 10px 14px !important;
+  border-radius: 15px !important;
+}
+body.ranked-quiz-active .progress.large {
+  height: 10px !important;
+  margin: 12px 0 16px !important;
+}
+body.ranked-quiz-active .quiz-question {
+  margin: 12px 0 14px !important;
+  font-size: clamp(18px, 2.4vw, 24px) !important;
+  line-height: 1.35 !important;
+}
+body.ranked-quiz-active .ranked-option-list {
+  gap: 9px !important;
+  margin-top: 10px !important;
+}
+body.ranked-quiz-active .ranked-option {
+  min-height: 48px !important;
+  padding: 12px 14px !important;
+  border-radius: 15px !important;
+  font-size: 15px !important;
+}
+body.ranked-quiz-active .ranked-option b {
+  min-width: 34px !important;
+  height: 30px !important;
+}
+body.ranked-quiz-active .answer-info {
+  margin-top: 12px !important;
+  padding: 13px 14px !important;
+  border-radius: 16px !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+body.ranked-quiz-active .quiz-actions {
+  padding-top: 0 !important;
+  margin-top: 12px !important;
+}
+body.ranked-quiz-active .quiz-actions .primary,
+body.ranked-quiz-active .quiz-actions button.primary,
+body.ranked-quiz-active .quiz-actions .secondary,
+body.ranked-quiz-active .quiz-actions button.secondary {
+  min-height: 48px !important;
+  padding: 0 20px !important;
+  border-radius: 15px !important;
+  font-size: 15px !important;
+}
+body.ranked-result-active .result-card {
+  padding: 22px 26px !important;
+}
+body.ranked-result-active .result-card h2 {
+  margin: 8px 0 8px !important;
+  font-size: clamp(50px, 8vw, 78px) !important;
+}
+body.ranked-result-active .result-card p {
+  margin: 6px 0 10px !important;
+}
+body.ranked-result-active .ranked-warning,
+body.ranked-result-active .ranked-note {
+  margin: 10px 0 !important;
+  padding: 12px 14px !important;
+}
+body.ranked-result-active .public-leaderboard {
+  margin-top: 14px !important;
+}
+
+@media (max-width: 1040px) {
+  .ranked-dashboard-layout { grid-template-columns: 1fr !important; }
+  .leaderboard-scroll { max-height: 360px !important; }
+  .profile-head { grid-template-columns: auto 1fr !important; }
+  .profile-head .ranked-actions { grid-column: 1 / -1; margin-top: 4px !important; }
+}
+@media (max-width: 780px) {
+  .ranked-page { padding-left: 12px !important; padding-right: 12px !important; }
+  .ranked-hero { min-height: auto !important; padding: 20px !important; }
+  .ranked-hero #themeToggle { margin-top: 10px; }
+  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .start-panel-strong { grid-template-columns: 1fr !important; }
+  .start-action-wrap { justify-content: stretch !important; }
+  .start-button-big { min-width: 0 !important; width: 100% !important; }
+  body.ranked-quiz-active .ranked-page { padding-left: 8px !important; padding-right: 8px !important; }
+  body.ranked-quiz-active .ranked-option { font-size: 14px !important; }
+  body.ranked-quiz-active .quiz-actions button { width: 100% !important; }
+}

@@ -198,7 +198,7 @@
     const { data, error } = await db
       .from(config.tables?.attempts || "ranked_attempts")
       .select("*")
-      .order("percent", { ascending: false })
+      .order("correct_count", { ascending: false })
       .order("duration_seconds", { ascending: true })
       .order("finished_at", { ascending: true })
       .limit(1000);
@@ -336,7 +336,7 @@
 
   function isBetterAttempt(a, b) {
     if (!b) return true;
-    if (a.percent !== b.percent) return a.percent > b.percent;
+    if ((a.correct || 0) !== (b.correct || 0)) return (a.correct || 0) > (b.correct || 0);
     if (a.durationSeconds !== b.durationSeconds) return a.durationSeconds < b.durationSeconds;
     return new Date(a.finishedAt) < new Date(b.finishedAt);
   }
@@ -349,7 +349,7 @@
       if (!prev || isBetterAttempt(item, prev)) map.set(key, item);
     });
     return [...map.values()].sort((a, b) => {
-      if (b.percent !== a.percent) return b.percent - a.percent;
+      if ((b.correct || 0) !== (a.correct || 0)) return (b.correct || 0) - (a.correct || 0);
       if (a.durationSeconds !== b.durationSeconds) return a.durationSeconds - b.durationSeconds;
       return new Date(a.finishedAt) - new Date(b.finishedAt);
     });
@@ -400,7 +400,13 @@
     return `<div class="ranked-warning"><b>Hozir mahalliy rejim:</b> natijalar faqat shu telefon/kompyuter xotirasida saqlanadi. Supabase ulangandan keyin umumiy reyting hamma qurilmada bir xil ishlaydi.</div>`;
   }
 
+  function setPageMode(mode) {
+    document.body.classList.toggle("ranked-quiz-active", mode === "quiz" || mode === "result");
+    document.body.classList.toggle("ranked-result-active", mode === "result");
+  }
+
   function renderProfileForm(mode = "create", message = "") {
+    setPageMode("profile");
     const p = profile || {};
     app.innerHTML = `
       <div class="ranked-dashboard-layout">
@@ -512,6 +518,7 @@
   }
 
   function renderDashboard() {
+    setPageMode("dashboard");
     if (!profile) return renderProfileForm();
     const pool = buildPool();
     const rank = currentRank();
@@ -534,7 +541,7 @@
             ${localModeNotice()}
             <div class="stats-grid">
               <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Mening o‘rnim</span></div>
-              <div class="stat-box"><strong>${best ? `${best.percent}%` : "—"}</strong><span>Eng yaxshi natija</span></div>
+              <div class="stat-box"><strong>${best ? `${best.correct} ta` : "—"}</strong><span>Eng yaxshi natija</span></div>
               <div class="stat-box"><strong>${best ? formatTime(best.durationSeconds) : "—"}</strong><span>Eng yaxshi vaqt</span></div>
               <div class="stat-box"><strong>${best ? formatDate(best.finishedAt) : "—"}</strong><span>Oxirgi yaxshi natija</span></div>
             </div>
@@ -586,7 +593,7 @@
         <tr class="${isMe ? "me-row" : ""}">
           <td class="rank-cell"><b>${index + 1}</b></td>
           <td><span class="leaderboard-name">${escapeHtml(item.fullName)}</span><span class="leaderboard-sub">${escapeHtml(item.company)} · ${escapeHtml(item.department)}</span></td>
-          <td><b>${item.percent}%</b><span class="leaderboard-sub">${item.correct}/${item.total}</span></td>
+          <td><b>${item.correct} ta</b><span class="leaderboard-sub">${item.total} savoldan</span></td>
           <td>${formatTime(item.durationSeconds)}</td>
           <td>${formatDate(item.finishedAt)}</td>
         </tr>
@@ -601,10 +608,10 @@
           </div>
           <span class="leaderboard-count">${best.length} xodim</span>
         </div>
-        <p class="leaderboard-help">Har bir xodim bo‘yicha faqat eng yaxshi natija ko‘rsatiladi. Yangi natija yaxshiroq bo‘lsa, eskisi avtomatik yangilanadi.</p>
+        <p class="leaderboard-help">Har bir xodim bo‘yicha faqat eng yaxshi to‘g‘ri javob soni ko‘rsatiladi. Yangi natijada to‘g‘ri javoblar soni ko‘proq bo‘lsa, eskisi avtomatik yangilanadi.</p>
         <div class="leaderboard-scroll">
           <table class="leaderboard-table">
-            <thead><tr><th>O‘rin</th><th>Xodim</th><th>Natija</th><th>Vaqt</th><th>Sana</th></tr></thead>
+            <thead><tr><th>O‘rin</th><th>Xodim</th><th>To‘g‘ri javob</th><th>Vaqt</th><th>Sana</th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
@@ -613,6 +620,7 @@
   }
 
   function startQuiz() {
+    setPageMode("quiz");
     const pool = buildPool();
     if (!pool.length) {
       alert("Savollar bazasi topilmadi. data/category-tests-data.js faylini tekshiring.");
@@ -712,9 +720,6 @@
       return;
     }
 
-    window.setTimeout(() => {
-      document.getElementById("nextRankedQuestion")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
   }
 
   function nextQuestion() {
@@ -733,6 +738,7 @@
   }
 
   async function finishQuiz(reason = "completed") {
+    setPageMode("result");
     if (finishInProgress && reason !== "wrong-answer") return;
     finishInProgress = true;
     stopTimer();
@@ -768,8 +774,8 @@
         saveLocalAttempts(attempts);
         improved = Boolean(result.improved);
         saveMessage = improved
-          ? "Natija oldingi natijadan yaxshi bo‘ldi va umumiy reytingda yangilandi."
-          : "Oldingi eng yaxshi natijangiz bundan yuqori yoki tezroq. Reytingdagi eski yaxshi natija saqlab qolindi.";
+          ? "To‘g‘ri javoblar soni oldingi natijadan ko‘proq bo‘ldi va umumiy reytingda yangilandi."
+          : "Oldingi eng yaxshi natijangizda to‘g‘ri javoblar soni ko‘proq yoki vaqt tezroq. Reytingdagi eski yaxshi natija saqlab qolindi.";
       } catch (error) {
         const localResult = upsertLocalBestAttempt(attempts, attempt);
         attempts = localResult.attempts;
@@ -783,8 +789,8 @@
       improved = localResult.improved;
       saveLocalAttempts(attempts);
       saveMessage = improved
-        ? "Natija ushbu qurilmadagi eng yaxshi natija sifatida saqlandi."
-        : "Oldingi eng yaxshi natijangiz bundan yuqori yoki tezroq. Eski yaxshi natija saqlandi.";
+        ? "To‘g‘ri javoblar soni ushbu qurilmadagi eng yaxshi natija sifatida saqlandi."
+        : "Oldingi eng yaxshi natijangizda to‘g‘ri javoblar soni ko‘proq yoki vaqt tezroq. Eski yaxshi natija saqlandi.";
     }
 
     const best = myBestAttempt() || attempt;
@@ -792,13 +798,13 @@
     app.innerHTML = `
       <section class="ranked-card result-card">
         <span class="mini-label">Test yakunlandi</span>
-        <h2>${percent}%</h2>
-        <p>${correct}/${total} ta javob to‘g‘ri. Sarflangan vaqt: <b>${formatTime(durationSeconds)}</b>.</p>
+        <h2>${correct} ta</h2>
+        <p>Jami ${total} ta savoldan <b>${correct} ta</b> javob to‘g‘ri. Sarflangan vaqt: <b>${formatTime(durationSeconds)}</b>.</p>
         ${reason === "wrong-answer" ? `<div class="ranked-warning"><b>Test avtomatik yakunlandi:</b> bitta noto‘g‘ri javob belgilandi va natija saqlandi.</div>` : ""}
         <div class="ranked-note">${saveMessage}</div>
         <div class="stats-grid">
           <div class="stat-box"><strong>${rank ? `${rank}-o‘rin` : "—"}</strong><span>Joriy o‘rin</span></div>
-          <div class="stat-box"><strong>${best.percent}%</strong><span>Reytingdagi natija</span></div>
+          <div class="stat-box"><strong>${best.correct} ta</strong><span>Reytingdagi natija</span></div>
           <div class="stat-box"><strong>${formatTime(best.durationSeconds)}</strong><span>Reytingdagi vaqt</span></div>
           <div class="stat-box"><strong>${formatDate(best.finishedAt)}</strong><span>Reyting sanasi</span></div>
         </div>
